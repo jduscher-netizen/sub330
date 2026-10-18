@@ -179,7 +179,7 @@ Regeln:
   - Tests ohne Netz: `cd sync && python -m unittest`
 - Inbetriebnahme: in GitHub Actions "Garmin-Login" starten, Code in der App unter Profil eintippen.
 - Plan bis zum HM steht (`plan/generate_plan.py` erzeugt `migrations/0004_plan_hm2027.sql`):
-  - Laufen fest nach Tagen ab 26.10.2026 (Woche 1 von 30): Di Intervalle, Do Schwelle bzw. HM-Tempo, Fr locker (nicht in Entlastungswochen), So Long Run. Wochen 1 und 2 nur locker nach dem Marathon, Entlastung in Woche 6, 9, 14, 18, 23, Testlauf 10 km in Woche 24, Rennen 23.05.2027.
+  - Laufen fest nach Tagen ab 26.10.2026 (Woche 1 von 30): Di Schwelle bzw. HM-Tempo, Do Intervalle (seit Migration 0005, Wunsch von Jan), Fr locker (nicht in Entlastungswochen), So Long Run. Wochen 1 und 2 nur locker nach dem Marathon, Entlastung in Woche 6, 9, 14, 18, 23, Testlauf 10 km in Woche 24, Rennen 23.05.2027.
   - Alles andere nur als Wochenziel ab 19.10.2026 in `week_targets` (gym, swim, padel, bike mit min/max): Jan entscheidet täglich, gezählt wird über die Garmin-Aktivitäten der Woche.
   - Plan ändern: Generator anpassen und als neue Migration ausgeben (die alte Migration nicht ändern, sie ist schon angewendet).
 - Plan-Screen: Wochenbilanz (Lauf-km, Läufe erledigt, harte Tage, 80/20, Wochenziele als Punkte) und pro Tag alle Garmin-Aktivitäten. Läufe werden in der Anzeige dem geplanten Lauf am selben Tag zugeordnet (vorläufig, das echte Matching ist Schritt 5).

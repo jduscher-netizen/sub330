@@ -101,7 +101,9 @@ def race() -> dict:
                 distance=21.1)
 
 
-# Wochen 1 bis 30: (Phase, Di, Do, Fr oder None, So, Notiz zur Woche)
+# Wochen 1 bis 30: (Phase, Intervall-Tag, Schwellen-Tag, Fr oder None, So, Notiz zur Woche)
+# Tage: Schwelle bzw. HM-Tempo am Dienstag, Intervalle am Donnerstag (Wunsch von Jan, 18.10.2026)
+THRESHOLD_DAY, INTERVAL_DAY = 1, 3
 WEEKS = [
     # Grundlage
     ("Grundlage", easy(30, "Zwei Wochen nach dem Marathon: nur locker."), easy(35), None, easy(50), "Wiedereinstieg"),
@@ -165,16 +167,17 @@ def q(v) -> str:
 
 
 def main() -> None:
-    out = ["-- Plan bis zum WVV Halbmarathon 23.05.2027, erzeugt mit plan/generate_plan.py",
+    out = ["-- Plan bis zum WVV Halbmarathon 23.05.2027, erzeugt mit plan/generate_plan.py (Schwelle Di, Intervalle Do)",
            "DELETE FROM planned_sessions WHERE date BETWEEN '2026-10-19' AND '2027-05-23';",
            "DELETE FROM week_targets WHERE week_start BETWEEN '2026-10-19' AND '2027-05-23';"]
     assert RUN_START + timedelta(weeks=len(WEEKS) - 1, days=6) == RACE, "Woche 30 muss mit dem Renntag enden"
 
     rows = []
-    for i, (phase, tue, thu, fri, sun, note) in enumerate(WEEKS):
+    for i, (phase, quality_a, quality_b, fri, sun, note) in enumerate(WEEKS):
         monday = RUN_START + timedelta(weeks=i)
         sat_easy = easy(20, strides=True) if i == len(WEEKS) - 1 else None
-        for offset, s in ((1, tue), (3, thu), (4, fri), (5, sat_easy), (6, sun)):
+        # quality_a steht in WEEKS an erster Stelle (Intervalle bzw. in Woche 1 und 2 locker), quality_b an zweiter
+        for offset, s in ((INTERVAL_DAY, quality_a), (THRESHOLD_DAY, quality_b), (4, fri), (5, sat_easy), (6, sun)):
             if not s:
                 continue
             d = monday + timedelta(days=offset)
