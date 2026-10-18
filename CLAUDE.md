@@ -96,18 +96,19 @@ Trainingsphilosophie: polarisiert 80/20.
 - Nicht in der App. Für Analysen im Chat nutzt Claude den Strava-Connector direkt.
 
 ### Zugangsschutz
-- Alle `/api/*`-Endpunkte außer `/api/health` prüfen das JWT von Cloudflare Access (`functions/_lib/access.ts`). Ohne die Variablen `ACCESS_TEAM_DOMAIN` und `ACCESS_AUD` bleiben sie gesperrt (401).
-- Lokal: `.dev.vars` mit `DEV_NO_AUTH=1`.
-- Beispieldaten ohne Anmeldung: `/?demo`.
+- Eigener Login für genau einen Nutzer: Passwort aus dem Pages-Secret `APP_PASSWORD` (kommt per Deploy-Workflow aus dem gleichnamigen GitHub-Secret), danach signiertes HttpOnly-Cookie für ein Jahr (`functions/_lib/session.ts`).
+- Alle `/api/*`-Endpunkte außer `/api/health`, `/api/login`, `/api/logout` verlangen das Cookie. Ohne `APP_PASSWORD` bleiben sie gesperrt (401).
+- Fehlversuche werden in `login_attempts` gezählt: maximal 8 pro IP in 15 Minuten.
+- Lokal: `.dev.vars` mit `DEV_NO_AUTH=1`. Beispieldaten ohne Anmeldung: `/?demo`.
 
 ### Stack (alles bei Cloudflare, ein Anbieter)
 - Frontend: PWA (React + Vite), mobil zuerst, gehostet auf Cloudflare Pages
 - API: Cloudflare Pages Functions (Workers) unter `/api/*`
 - Datenbank: Cloudflare D1 (SQLite)
-- Login: Cloudflare Access (Zero Trust), nur Jans E-Mail-Adresse, Einmal-Code per Mail
+- Login: eigener Passwort-Login (siehe Zugangsschutz)
 - Garmin-Sync: Python-Job per GitHub Actions Cron (stündlich 6 bis 22 Uhr), schreibt direkt über die Cloudflare-D1-API in die Datenbank (kein öffentlicher Schreib-Endpunkt)
 - Deployment: GitHub Actions mit Wrangler
-- Secrets ausschließlich in GitHub Secrets bzw. Cloudflare: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `GARMIN_EMAIL`, `GARMIN_PASSWORD`
+- Secrets ausschließlich in GitHub Secrets bzw. Cloudflare: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `GARMIN_EMAIL`, `GARMIN_PASSWORD`, `APP_PASSWORD`
 
 ### Datenmodell (Entwurf)
 - `planned_sessions`: Datum, Typ, Zone, Umfang, Priorität, Status, verknüpfte Aktivität
@@ -154,7 +155,7 @@ Regeln:
 
 ## Umsetzungsreihenfolge
 
-1. Projekt-Setup, Cloudflare (Pages, D1, Access), Datenmodell
+1. Projekt-Setup, Cloudflare (Pages, D1), Login, Datenmodell
 2. Garmin-Sync (Readiness, Metriken, Aktivitäten) inkl. Sync-Log
 3. Heute-Screen
 4. Trainingsplan-Ansicht und Plan-Import

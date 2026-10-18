@@ -48,5 +48,15 @@ jobs:
       - name: Pages-Projekt anlegen (falls neu)
         run: npx wrangler pages project create sub330 --production-branch main || echo "Projekt existiert bereits"
 
+      - name: Login-Passwort an Cloudflare übergeben
+        env:
+          APP_PASSWORD: ${{ secrets.APP_PASSWORD }}
+        run: |
+          if [ -z "${APP_PASSWORD}" ]; then
+            echo "::warning::GitHub-Secret APP_PASSWORD fehlt, die App bleibt gesperrt."
+          else
+            printf '%s' "$APP_PASSWORD" | npx wrangler pages secret put APP_PASSWORD --project-name sub330
+          fi
+
       - name: Veröffentlichen
         run: npx wrangler pages deploy dist --project-name sub330 --branch main --commit-dirty=true

@@ -1,9 +1,7 @@
 export interface Env {
   DB: D1Database;
-  /** Team-Domain von Cloudflare Access, z. B. "sub330.cloudflareaccess.com" */
-  ACCESS_TEAM_DOMAIN?: string;
-  /** Audience-Tag der Access-Anwendung */
-  ACCESS_AUD?: string;
+  /** Passwort für den Login (Pages-Secret) */
+  APP_PASSWORD?: string;
   /** Nur lokal: "1" schaltet die Zugangsprüfung ab (.dev.vars) */
   DEV_NO_AUTH?: string;
 }

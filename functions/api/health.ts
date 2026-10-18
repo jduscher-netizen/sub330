@@ -9,5 +9,5 @@ export const onRequestGet: PagesFunction<Env> = async ({ env }) => {
   } catch {
     db = false;
   }
-  return json({ ok: true, db, access: Boolean(env.ACCESS_TEAM_DOMAIN && env.ACCESS_AUD) });
+  return json({ ok: true, db, login: Boolean(env.APP_PASSWORD) });
 };

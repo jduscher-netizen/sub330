@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
-import type { SyncState } from "../api";
+import { useState, type FormEvent, type ReactNode } from "react";
+import { api, type SyncState } from "../api";
 import { ago } from "../format";
 
 export type Tab = "heute" | "plan" | "verlauf" | "profil";
@@ -43,22 +43,50 @@ export function SyncPill({ sync }: { sync: SyncState[] }) {
 
 /** Fehler und leere Zustände: sagt, was los ist und was zu tun ist. */
 export function Problem({ status, message }: { status: number; message: string }) {
-  if (status === 401) {
-    return (
-      <div className="notice" style={{ marginTop: 20 }}>
-        <strong>Zugang noch nicht freigeschaltet</strong>
-        {message} Deine Trainingsdaten bleiben gesperrt, bis die Anmeldung über Cloudflare Access eingerichtet ist.
-        <div style={{ marginTop: 12 }}>
-          <a className="btn btn-ghost" href="?demo#/heute">Beispieldaten ansehen</a>
-        </div>
-      </div>
-    );
-  }
+  if (status === 401) return <Login reason={message} />;
   return (
     <div className="notice" style={{ marginTop: 20 }}>
       <strong>Daten nicht geladen</strong>
       {message}
     </div>
+  );
+}
+
+function Login({ reason }: { reason: string }) {
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const notReady = reason.includes("nicht eingerichtet");
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError(null);
+    const res = await api.login(password);
+    setBusy(false);
+    if (res.ok) location.reload();
+    else setError(res.message ?? "Anmelden fehlgeschlagen.");
+  }
+
+  return (
+    <form className="notice" style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 12 }} onSubmit={submit}>
+      <strong style={{ margin: 0 }}>Anmelden</strong>
+      {notReady ? (
+        <span>{reason} Das Passwort wird als GitHub-Secret APP_PASSWORD hinterlegt.</span>
+      ) : (
+        <>
+          <label htmlFor="pw" style={{ fontSize: 13, color: "var(--text-muted)" }}>Passwort</label>
+          <input
+            id="pw" type="password" autoComplete="current-password" value={password}
+            onChange={(e) => setPassword(e.target.value)} required
+            style={{ height: 48, borderRadius: 10, border: "1px solid #5a6168", background: "var(--asphalt-deep)", color: "var(--text)", padding: "0 14px", fontSize: 16, fontFamily: "inherit" }}
+          />
+          {error && <span role="alert" style={{ color: "var(--z5)", fontSize: 14 }}>{error}</span>}
+          <button type="submit" className="btn btn-primary" disabled={busy || !password}>{busy ? "Prüfe" : "Anmelden"}</button>
+        </>
+      )}
+      <a href="?demo#/heute" style={{ fontSize: 14, color: "var(--text-muted)" }}>Beispieldaten ansehen</a>
+    </form>
   );
 }
 

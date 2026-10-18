@@ -54,7 +54,24 @@ async function get<T>(path: string, demo: () => T): Promise<Result<T>> {
   }
 }
 
+async function post(path: string, body?: unknown): Promise<{ ok: boolean; message?: string }> {
+  try {
+    const res = await fetch(path, {
+      method: "POST",
+      credentials: "include",
+      headers: { "content-type": "application/json" },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const data = await res.json().catch(() => ({}));
+    return { ok: res.ok, message: data.message };
+  } catch {
+    return { ok: false, message: "Keine Verbindung. Prüfe dein Netz." };
+  }
+}
+
 export const api = {
+  login: (password: string) => post("/api/login", { password }),
+  logout: () => post("/api/logout"),
   today: () => get<TodayData>("/api/today", demoToday),
   week: (start?: string) => get<WeekData>(`/api/week${start ? `?start=${start}` : ""}`, () => demoWeek(start)),
   overview: () => get<OverviewData>("/api/overview", demoOverview),

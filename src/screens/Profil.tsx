@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api, type OverviewData, type Result, type SyncState, type Zone } from "../api";
+import { api, isDemo, type OverviewData, type Result, type SyncState, type Zone } from "../api";
 import { Loading, Problem } from "../components/ui";
 import { ago } from "../format";
 import { ZONES } from "../zones";
@@ -35,6 +35,12 @@ export function Profil() {
           ))}
         </div>
       </section>
+
+      {res?.ok && !isDemo && (
+        <div style={{ paddingTop: 30 }}>
+          <button type="button" className="btn btn-ghost btn-block" onClick={() => api.logout().then(() => location.reload())}>Abmelden</button>
+        </div>
+      )}
     </div>
   );
 }

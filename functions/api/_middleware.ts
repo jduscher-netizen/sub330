@@ -1,15 +1,17 @@
-import { verifyAccess } from "../_lib/access";
+import { hasValidSession } from "../_lib/session";
 import { json, type Env } from "../_lib/types";
 
-// Alle /api-Endpunkte außer /api/health sind nur mit gültiger Cloudflare-Access-Anmeldung erreichbar.
+const PUBLIC = new Set(["/api/health", "/api/login", "/api/logout"]);
+
+// Alle anderen /api-Endpunkte nur mit gültiger Anmeldung.
 export const onRequest: PagesFunction<Env> = async (ctx) => {
-  const url = new URL(ctx.request.url);
-  if (url.pathname === "/api/health") return ctx.next();
-  try {
-    const res = await verifyAccess(ctx.request, ctx.env);
-    if (!res.ok) return json({ error: "unauthorized", message: res.reason }, 401);
-  } catch (e) {
-    return json({ error: "unauthorized", message: (e as Error).message }, 401);
+  const { pathname } = new URL(ctx.request.url);
+  if (PUBLIC.has(pathname) || ctx.env.DEV_NO_AUTH === "1") return ctx.next();
+  if (!ctx.env.APP_PASSWORD) {
+    return json({ error: "unauthorized", message: "Der Login ist noch nicht eingerichtet." }, 401);
+  }
+  if (!(await hasValidSession(ctx.request, ctx.env))) {
+    return json({ error: "unauthorized", message: "Bitte anmelden." }, 401);
   }
   return ctx.next();
 };
