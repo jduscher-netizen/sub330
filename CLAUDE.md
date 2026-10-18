@@ -91,11 +91,14 @@ Trainingsphilosophie: polarisiert 80/20.
 ### Strava
 - OAuth plus Webhook für neue Aktivitäten.
 
-### Vorschlag Stack
+### Stack (alles bei Cloudflare, ein Anbieter)
 - Frontend: PWA (React + Vite), mobil zuerst, gehostet auf Cloudflare Pages
-- Datenbank und Auth: Supabase (Postgres)
-- Garmin-Sync: Python-Job per GitHub Actions Cron (z. B. stündlich 6 bis 22 Uhr), schreibt in Supabase
-- Secrets ausschließlich in GitHub Secrets bzw. Supabase
+- API: Cloudflare Pages Functions (Workers) unter `/api/*`
+- Datenbank: Cloudflare D1 (SQLite)
+- Login: Cloudflare Access (Zero Trust), nur Jans E-Mail-Adresse, Einmal-Code per Mail
+- Garmin-Sync: Python-Job per GitHub Actions Cron (stündlich 6 bis 22 Uhr), schickt die Daten mit geheimem Token an `/api/ingest`
+- Deployment: GitHub Actions mit Wrangler
+- Secrets ausschließlich in GitHub Secrets bzw. Cloudflare: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `GARMIN_EMAIL`, `GARMIN_PASSWORD`, `INGEST_TOKEN`
 
 ### Datenmodell (Entwurf)
 - `planned_sessions`: Datum, Typ, Zone, Umfang, Priorität, Status, verknüpfte Aktivität
@@ -142,7 +145,7 @@ Regeln:
 
 ## Umsetzungsreihenfolge
 
-1. Projekt-Setup, Supabase, Datenmodell
+1. Projekt-Setup, Cloudflare (Pages, D1, Access), Datenmodell
 2. Garmin-Sync (Readiness, Metriken, Aktivitäten) inkl. Sync-Log
 3. Heute-Screen
 4. Trainingsplan-Ansicht und Plan-Import
