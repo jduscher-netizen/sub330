@@ -164,6 +164,16 @@ Regeln:
 7. (entfällt vorerst) Strava-Anbindung, nur falls Garmin nicht reicht
 8. Auswertungen
 
+## Stand (18.10.2026)
+
+- Schritt 1 erledigt: App live auf https://sub330.pages.dev (Beispieldaten: `/?demo`), D1 verbunden, Passwort-Login aktiv, Deploy per GitHub Actions bei jedem Push auf `main`.
+- GitHub-Secrets vorhanden: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `GARMIN_EMAIL`, `GARMIN_PASSWORD`, `APP_PASSWORD`.
+- Nächster Schritt 2, Garmin-Sync:
+  - `sync/garmin_sync.py` mit `garminconnect` (getestet mit 0.3.19, braucht Python 3.12+): Training Readiness inkl. Faktoren, HRV, Schlaf, Body Battery, Ruhepuls, VO2max, Gewicht, Aktivitäten der letzten 3 Tage
+  - Schreiben direkt in D1 über die Cloudflare-API (`POST /accounts/{id}/d1/database/{db}/query`), Tabellen siehe `migrations/0001_init.sql`
+  - Workflows: `garmin-login.yml` (manuell, Zwei-Faktor-Ablauf wie unter Technik › Garmin) und `garmin-sync.yml` (Cron stündlich 6 bis 22 Uhr Ortszeit)
+  - API und UI: `POST /api/garmin/mfa` (Code speichern) und "Garmin verbinden" im Profil-Screen; jeder Lauf schreibt einen Eintrag in `sync_log`
+
 ## Arbeitsweise
 
 - Sprache in UI und Kommentaren: Deutsch
