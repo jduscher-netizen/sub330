@@ -1,24 +1,22 @@
-import { addDays, isIsoDate, json, todayBerlin, type Env } from "../_lib/types";
+import { activitiesBetween, addDays, isIsoDate, json, mondayOf, todayBerlin, weekTargets, type Env } from "../_lib/types";
 
-// Wochenplan: geplante Einheiten und absolvierte Aktivitäten von Montag bis Sonntag.
+// Wochenplan: geplante Läufe, Wochenziele und absolvierte Aktivitäten von Montag bis Sonntag.
 export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   const q = new URL(request.url).searchParams.get("start");
   const start = mondayOf(isIsoDate(q) ? q : todayBerlin());
   const end = addDays(start, 6);
 
-  const [sessions, activities] = await Promise.all([
+  const [sessions, activities, targets] = await Promise.all([
     env.DB.prepare("SELECT * FROM planned_sessions WHERE date BETWEEN ? AND ? ORDER BY date, sort, id")
       .bind(start, end).all(),
-    env.DB.prepare(
-      "SELECT id, source, sport, name, start_time, duration_s, distance_m, avg_hr, zone_seconds_json FROM activities WHERE substr(start_time, 1, 10) BETWEEN ? AND ? ORDER BY start_time",
-    ).bind(start, end).all(),
+    activitiesBetween(env, start, end),
+    weekTargets(env, start),
   ]);
 
-  return json({ start, end, sessions: sessions.results, activities: activities.results });
+  const parsed = sessions.results.map((s) => {
+    let structure = null;
+    try { structure = s.structure_json ? JSON.parse(s.structure_json as string) : null; } catch { structure = null; }
+    return { ...s, structure };
+  });
+  return json({ start, end, sessions: parsed, activities: activities.results, targets: targets.results });
 };
-
-function mondayOf(date: string): string {
-  const d = new Date(date + "T12:00:00Z");
-  const offset = (d.getUTCDay() + 6) % 7; // Montag = 0
-  return addDays(date, -offset);
-}

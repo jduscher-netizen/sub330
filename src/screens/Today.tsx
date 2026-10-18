@@ -4,6 +4,8 @@ import { Bib } from "../components/Bib";
 import { Loading, Problem, SyncPill } from "../components/ui";
 import { longDate, weeksUntil } from "../format";
 import { sessionColor, shoeFor, ZONE_HEIGHT, ZONES } from "../zones";
+import { FlexRow } from "../components/FlexRow";
+import { activityFacts, flexProgress, isRun, sportInfo, todayAdvice } from "../training";
 
 const HM_DATE = "2027-05-23";
 
@@ -30,8 +32,11 @@ export function Today() {
     );
   }
 
-  const { date, metrics, sessions, sync } = res.data;
-  const main = sessions.find((s) => s.type !== "rest" && !s.type.startsWith("gym")) ?? sessions[0];
+  const { date, metrics, sessions, sync, activities, week_activities, targets, yesterday, tomorrow } = res.data;
+  const main = sessions.find((s) => isRun(s.type)) ?? sessions.find((s) => s.type !== "rest");
+  const runDone = main && isRun(main.type) ? activities.find((a) => a.sport === "run") : undefined;
+  const advice = todayAdvice(sessions, yesterday, tomorrow);
+  const flex = flexProgress(targets, week_activities);
   const later = sessions.filter((s) => s !== main);
   const score = metrics?.readiness_score ?? null;
   const hardToday = sessions.some((s) => s.hard === 1);
@@ -73,10 +78,33 @@ export function Today() {
         </div>
       )}
 
-      {main ? <MainSession s={main} /> : (
+      {main ? <MainSession s={main} done={!!runDone} /> : (
         <section className="section ruled">
-          <h2>Heute nichts geplant</h2>
-          <p className="empty" style={{ padding: 0 }}>Ruhetag. Wenn du trotzdem etwas machst, taucht es nach dem nächsten Garmin-Sync hier auf.</p>
+          <h2 className="session-title">Kein Lauf heute</h2>
+          <p className="session-desc" style={{ margin: 0 }}>{advice.text}</p>
+        </section>
+      )}
+
+      {activities.length > 0 && (
+        <section className="section" aria-label="Schon erledigt">
+          <h2>Schon erledigt</h2>
+          <div>
+            {activities.map((a) => (
+              <div className="row" key={a.id}>
+                <span className="swatch" style={{ background: sportInfo(a.sport).color }} />
+                <span className="grow">{sportInfo(a.sport).label}{a.name ? <span className="muted" style={{ fontSize: 13 }}>, {a.name}</span> : null}</span>
+                <span className="muted" style={{ fontSize: 13, textAlign: "right" }}>{activityFacts(a)}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {flex.length > 0 && (
+        <section className="section" aria-label="Diese Woche frei einteilen">
+          <h2>Diese Woche frei einteilen</h2>
+          {main && <p className="sub" style={{ margin: 0 }}>{advice.text}</p>}
+          <div>{flex.map((f) => <FlexRow key={f.key} f={f} />)}</div>
         </section>
       )}
 
@@ -98,13 +126,13 @@ export function Today() {
   );
 }
 
-function MainSession({ s }: { s: Session }) {
+function MainSession({ s, done }: { s: Session; done: boolean }) {
   const total = s.structure?.reduce((a, b) => a + b.min, 0) ?? 0;
   const shoe = shoeFor(s.type);
   return (
     <section className="section ruled" aria-label="Einheit heute">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
-        <h2 className="session-title">{s.title}</h2>
+        <h2 className="session-title">{done && <span style={{ color: "var(--z2)" }}>✓ </span>}{s.title}</h2>
         {s.distance_km != null && <span className="muted" style={{ fontSize: 14 }}>{s.distance_km} km</span>}
       </div>
       {s.notes && <p className="session-desc">{s.notes}</p>}

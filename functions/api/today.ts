@@ -1,13 +1,19 @@
-import { isIsoDate, json, todayBerlin, type Env } from "../_lib/types";
+import { activitiesBetween, addDays, isIsoDate, json, mondayOf, todayBerlin, weekTargets, type Env } from "../_lib/types";
 
 // Alles für den Heute-Screen in einem Aufruf.
 export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   const q = new URL(request.url).searchParams.get("date");
   const date = isIsoDate(q) ? q : todayBerlin();
 
-  const [metrics, sessions, sync] = await Promise.all([
+  const monday = mondayOf(date);
+  const [metrics, sessions, around, weekActs, targets, sync] = await Promise.all([
     env.DB.prepare("SELECT * FROM daily_metrics WHERE date <= ? ORDER BY date DESC LIMIT 1").bind(date).first(),
     env.DB.prepare("SELECT * FROM planned_sessions WHERE date = ? ORDER BY sort, id").bind(date).all(),
+    // Gestern und morgen, für die Hinweise zu harten Tagen
+    env.DB.prepare("SELECT date, type, title, hard FROM planned_sessions WHERE date IN (?, ?) ORDER BY date, sort, id")
+      .bind(addDays(date, -1), addDays(date, 1)).all(),
+    activitiesBetween(env, monday, addDays(monday, 6)),
+    weekTargets(env, monday),
     lastSync(env),
   ]);
 
@@ -15,6 +21,11 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     date,
     metrics: metrics ? { ...metrics, factors: parse(metrics.factors_json as string | null) } : null,
     sessions: sessions.results.map((s) => ({ ...s, structure: parse(s.structure_json as string | null) })),
+    yesterday: around.results.filter((s) => s.date === addDays(date, -1)),
+    tomorrow: around.results.filter((s) => s.date === addDays(date, 1)),
+    activities: weekActs.results.filter((a) => String(a.start_time).slice(0, 10) === date),
+    week_activities: weekActs.results,
+    targets: targets.results,
     sync,
   });
 };

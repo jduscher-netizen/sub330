@@ -12,7 +12,7 @@ concurrency:
 jobs:
   login:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -34,6 +34,8 @@ jobs:
         working-directory: sync
         run: python garmin_login.py
 
-      - name: Ersten Sync starten
+      - name: Ersten Sync mit 8 Wochen Historie
         working-directory: sync
+        env:
+          SYNC_DAYS: "56"
         run: python garmin_sync.py

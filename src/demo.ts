@@ -1,4 +1,4 @@
-import type { GarminStatus, OverviewData, Session, TodayData, WeekData } from "./api";
+import type { Activity, GarminStatus, OverviewData, Session, TodayData, WeekData, WeekTarget } from "./api";
 import { addDays, mondayOf, todayIso } from "./format";
 
 // Beispieldaten für die Ansicht mit ?demo, solange noch keine echten Daten da sind.
@@ -13,8 +13,37 @@ const intervals = (date: string): Session => ({
   ],
 });
 
+const demoTargets = (): WeekTarget[] => [
+  { category: "gym", target_min: 3, target_max: 4, note: null },
+  { category: "swim", target_min: 1, target_max: 2, note: "Kraultechnik" },
+  { category: "padel", target_min: 1, target_max: 1, note: null },
+  { category: "bike", target_min: 0, target_max: 1, note: "Optional, nur Z2" },
+];
+
+function act(id: number, date: string, time: string, sport: string, name: string, min: number, m: number | null, hr: number, zones?: number[]): Activity {
+  return { id: `garmin:${id}`, source: "garmin", sport, name, start_time: `${date}T${time}`, duration_s: min * 60, distance_m: m, avg_hr: hr, zone_seconds_json: zones ? JSON.stringify(zones) : null };
+}
+
+/** Aktivitäten der Beispielwoche: nur Tage vor heute, dazu Gym heute früh */
+function demoActivities(mo: string, today: string): Activity[] {
+  const d = (i: number) => addDays(mo, i);
+  const all = [
+    act(1, d(0), "07:10:00", "strength", "Gym Oberkörper", 55, null, 112),
+    act(2, d(1), "18:05:00", "run", "Würzburg Intervalle", 62, 11400, 156, [300, 1500, 540, 600, 780]),
+    act(3, d(2), "19:30:00", "swim", "Hallenbad", 40, 1500, 128),
+    act(4, d(3), "17:45:00", "run", "Schwelle", 59, 11800, 158, [420, 1260, 360, 1500, 0]),
+    act(5, d(3), "20:00:00", "padel", "Padel", 85, null, 141),
+    act(6, d(4), "07:00:00", "strength", "Gym Beine", 50, null, 118),
+    act(7, d(5), "10:00:00", "bike", "Rolle Z2", 60, 28000, 138, [900, 2700, 0, 0, 0]),
+  ];
+  const past = all.filter((a) => a.start_time.slice(0, 10) < today);
+  return [...past, act(9, today, "06:45:00", "strength", "Gym Oberkörper", 50, null, 110)];
+}
+
 export function demoToday(): TodayData {
   const date = todayIso();
+  const mo = mondayOf(date);
+  const week = demoActivities(mo, date);
   return {
     date,
     metrics: {
@@ -28,10 +57,12 @@ export function demoToday(): TodayData {
         { label: "Stress", value: "niedrig", percent: 82 },
       ],
     },
-    sessions: [
-      intervals(date),
-      { id: 3, date, type: "gym_legs", title: "Gym Beine und hintere Kette", zone: null, duration_min: 50, distance_km: null, hard: 1, status: "geplant", notes: null },
-    ],
+    sessions: [intervals(date)],
+    yesterday: [],
+    tomorrow: [{ date: addDays(date, 1), type: "easy", title: "Lockerer Lauf, 45 min Z2", hard: 0 }],
+    activities: week.filter((a) => a.start_time.slice(0, 10) === date),
+    week_activities: week,
+    targets: demoTargets(),
     sync: [{ source: "garmin", last_ok: new Date(Date.now() - 8 * 60_000).toISOString(), last_message: null, last_ok_flag: 1 }],
   };
 }
@@ -39,26 +70,18 @@ export function demoToday(): TodayData {
 export function demoWeek(start?: string): WeekData {
   const mo = mondayOf(start ?? todayIso());
   const d = (i: number) => addDays(mo, i);
-  const s = (id: number, i: number, type: string, title: string, zone: Session["zone"], hard = 0, status = "geplant", min: number | null = null, km: number | null = null): Session =>
-    ({ id, date: d(i), type, title, zone, duration_min: min, distance_km: km, hard, status, notes: null, activity_id: id === 1 ? "garmin:1" : null });
+  const s = (id: number, i: number, type: string, title: string, zone: Session["zone"], hard: number, min: number, km: number): Session =>
+    ({ id, date: d(i), type, title, zone, duration_min: min, distance_km: km, hard, status: "geplant", notes: null, structure: null });
   return {
     start: mo, end: d(6),
     sessions: [
-      s(1, 0, "easy", "Lockerer Lauf, 40 min Z2", "Z2", 0, "erledigt", 45, 8),
-      s(2, 0, "gym_upper", "Gym Oberkörper", null, 0, "erledigt", 50),
-      s(3, 1, "intervals", "VO2max-Intervalle, 5 × 3 min", "Z5", 1, "geplant", 60, 11),
-      s(4, 1, "gym_legs", "Gym Beine, abends", null, 1, "geplant", 50),
-      s(5, 2, "bike", "Rad auf der Rolle, 60 min Z2", "Z2", 0, "geplant", 60),
-      s(6, 2, "swim", "Schwimmen, Kraultechnik", "Z1", 0, "geplant", 40),
-      s(7, 3, "threshold", "Schwelle, 3 × 10 min Z4", "Z4", 1, "geplant", 65, 13),
-      s(8, 3, "padel", "Padel, abends", "Z3", 1, "geplant", 90),
-      s(9, 4, "gym_full", "Gym Ganzkörper", null, 0, "geplant", 50),
-      s(10, 5, "swim", "Schwimmen, Kraultechnik", "Z1", 0, "geplant", 40),
-      s(11, 6, "long", "Long Run, 20 km Z2", "Z2", 1, "geplant", 120, 20),
+      { ...s(3, 1, "intervals", "VO2max-Intervalle, 5 × 3 min", "Z5", 1, 60, 11), structure: intervals(d(1)).structure },
+      s(7, 3, "threshold", "Schwelle, 3 × 10 min Z4", "Z4", 1, 65, 13),
+      s(9, 4, "easy", "Lockerer Lauf, 45 min Z2", "Z2", 0, 45, 7.5),
+      s(11, 6, "long", "Long Run, 100 min (ca. 17 km)", "Z2", 1, 100, 17),
     ],
-    activities: [
-      { id: "garmin:1", source: "garmin", sport: "run", name: "Lockerer Lauf", start_time: d(0) + "T17:40:00", duration_s: 2790, distance_m: 8200, avg_hr: 144, zone_seconds_json: "[420,2190,180,0,0]" },
-    ],
+    activities: demoActivities(mo, todayIso()),
+    targets: demoTargets(),
   };
 }
 

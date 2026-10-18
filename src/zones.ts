@@ -22,5 +22,6 @@ const SHOES: Record<string, string> = {
   threshold: "Adizero EVO SL",
   long: "Glycerin Max",
   easy: "Glycerin Max",
+  race: "Adizero EVO SL",
 };
 export const shoeFor = (type: string): string | null => SHOES[type] ?? null;

@@ -20,6 +20,15 @@ from d1 import D1, D1Error
 TZ = ZoneInfo("Europe/Berlin")
 ACTIVITY_DAYS = 3
 METRIC_DAYS = 2  # heute und gestern (gestern wird nachts noch fertig)
+MAX_BACKFILL_DAYS = 120
+
+
+def backfill_days() -> int:
+    """SYNC_DAYS (z. B. 56) holt einmalig mehr Historie; sonst der normale kurze Zeitraum."""
+    try:
+        return max(0, min(MAX_BACKFILL_DAYS, int(os.environ.get("SYNC_DAYS") or 0)))
+    except ValueError:
+        return 0
 RELOGIN = "Garmin neu verbinden"
 
 # ---------------------------------------------------------------------------
@@ -360,7 +369,10 @@ def run(db: D1) -> tuple[bool, str]:
             return None
 
     today = datetime.now(TZ).date()
-    days = [(today - timedelta(days=i)).isoformat() for i in range(METRIC_DAYS)]
+    extra = backfill_days()
+    metric_days_n = max(METRIC_DAYS, extra)
+    activity_days_n = max(ACTIVITY_DAYS, extra)
+    days = [(today - timedelta(days=i)).isoformat() for i in range(metric_days_n)]
 
     training_status = fetch("Trainingsstatus", lambda: garmin.get_training_status(today.isoformat()))
     metric_days = 0
@@ -382,7 +394,7 @@ def run(db: D1) -> tuple[bool, str]:
             upsert_metrics(db, row)
             metric_days += 1
 
-    start = (today - timedelta(days=ACTIVITY_DAYS - 1)).isoformat()
+    start = (today - timedelta(days=activity_days_n - 1)).isoformat()
     acts = fetch("Aktivitäten", lambda: garmin.get_activities_by_date(start, today.isoformat())) or []
     n_acts = 0
     for act in acts:

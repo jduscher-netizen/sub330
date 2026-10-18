@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, isDemo, type Activity, type Result, type Session, type WeekData } from "../api";
+import { FlexRow } from "../components/FlexRow";
+import { activityFacts, flexProgress, isRun, matchRuns, sportInfo } from "../training";
 import { Loading, Problem } from "../components/ui";
 import { addDays, dayOfMonth, mondayOf, shortWeekday, todayIso, weekRange } from "../format";
 import { sessionColor } from "../zones";
@@ -55,7 +57,7 @@ export function Plan() {
             </div>
           </div>
         ) : (
-          <p className="sub" style={{ margin: 0 }}>{wk < 1 ? `Der Plan startet am 26. Oktober.` : "Nach dem Halbmarathon, Planung für den Herbst folgt."}</p>
+          <p className="sub" style={{ margin: 0 }}>{wk < 1 ? "Laufpause nach dem Marathon. Die Läufe starten am 26. Oktober, Gym und Co. teilst du frei ein." : "Nach dem Halbmarathon, Planung für den Herbst folgt."}</p>
         )}
       </header>
 
@@ -67,45 +69,39 @@ export function Plan() {
 function Week({ data }: { data: WeekData }) {
   const today = todayIso();
   const days = Array.from({ length: 7 }, (_, i) => addDays(data.start, i));
-  const byId = new Map<string, Activity>(data.activities.map((a) => [a.id, a]));
+  const { matched, rest } = matchRuns(data.sessions, data.activities);
 
-  if (data.sessions.length === 0) {
-    return <p className="empty">Für diese Woche ist noch nichts geplant. Der Plan wird im nächsten Schritt importiert.</p>;
+  if (data.sessions.length === 0 && data.activities.length === 0 && data.targets.length === 0) {
+    return <p className="empty">Für diese Woche ist nichts geplant und Garmin hat noch keine Aktivitäten geliefert.</p>;
   }
 
   return (
     <>
-    <WeekSummary data={data} />
-    <ol className="days" aria-label="Tage der Woche">
-      {days.map((d) => {
-        const items = data.sessions.filter((s) => s.date === d);
-        const hard = items.some((s) => s.hard === 1);
-        return (
-          <li key={d} className={`day${d === today ? " today" : ""}`}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              <span className="day-name">{d === today ? "Heute" : shortWeekday(d)}</span>
-              <span className="day-num">{dayOfMonth(d)}</span>
-              {hard && <span className="hard-tag">harter Tag</span>}
-            </div>
-            <div className="day-items">
-              {items.length === 0 ? <span className="muted" style={{ fontSize: 15 }}>Ruhetag</span> : items.map((s) => <Item key={s.id} s={s} act={s.activity_id ? byId.get(s.activity_id) : undefined} />)}
-            </div>
-          </li>
-        );
-      })}
-    </ol>
+      <WeekSummary data={data} matched={matched} />
+      <ol className="days" aria-label="Tage der Woche">
+        {days.map((d) => {
+          const items = data.sessions.filter((s) => s.date === d);
+          const extra = rest.filter((a) => a.start_time.slice(0, 10) === d);
+          const hard = items.some((s) => s.hard === 1) || extra.some((a) => a.sport === "padel");
+          return (
+            <li key={d} className={`day${d === today ? " today" : ""}`}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <span className="day-name">{d === today ? "Heute" : shortWeekday(d)}</span>
+                <span className="day-num">{dayOfMonth(d)}</span>
+                {hard && <span className="hard-tag">harter Tag</span>}
+              </div>
+              <div className="day-items">
+                {items.length === 0 && extra.length === 0 && <span className="muted" style={{ fontSize: 15 }}>{d < today ? "Frei" : "Kein Lauf, frei einteilen"}</span>}
+                {items.map((s) => <Item key={s.id} s={s} act={matched.get(s.id)} past={d < today} />)}
+                {extra.map((a) => <ActivityItem key={a.id} a={a} />)}
+              </div>
+            </li>
+          );
+        })}
+      </ol>
     </>
   );
 }
-
-// Kategorien für die Wochenbilanz: Einheiten-Typ → Garmin-Sportart
-const CATEGORIES = [
-  { key: "run", label: "Laufen", types: ["intervals", "threshold", "long", "easy", "run"], sport: "run", color: "var(--bib)" },
-  { key: "gym", label: "Gym", types: ["gym_legs", "gym_upper", "gym_full"], sport: "strength", color: "var(--gym)" },
-  { key: "swim", label: "Schwimmen", types: ["swim"], sport: "swim", color: "var(--z1)" },
-  { key: "bike", label: "Rad", types: ["bike"], sport: "bike", color: "var(--z2)" },
-  { key: "padel", label: "Padel", types: ["padel"], sport: "padel", color: "var(--z3)" },
-] as const;
 
 const km = (v: number) => (Math.round(v * 10) / 10).toLocaleString("de-DE", { maximumFractionDigits: 1 });
 
@@ -119,28 +115,20 @@ function parseZones(json?: string | null): number[] | null {
   }
 }
 
-/** Bilanz der Woche: Laufumfang, erledigte Einheiten, harte Tage, Sportarten und 80/20. */
-function WeekSummary({ data }: { data: WeekData }) {
-  const sessions = data.sessions.filter((s) => s.type !== "rest");
+/** Bilanz der Woche: Laufumfang, Läufe, harte Tage, 80/20 und Wochenziele für alles andere. */
+function WeekSummary({ data, matched }: { data: WeekData; matched: Map<number, Activity> }) {
+  const runs = data.sessions.filter((s) => isRun(s.type));
   const acts = data.activities;
+  const runsDone = runs.filter((s) => s.status === "erledigt" || matched.has(s.id)).length;
+  const hardDays = new Set([
+    ...data.sessions.filter((s) => s.hard === 1).map((s) => s.date),
+    ...acts.filter((a) => a.sport === "padel").map((a) => a.start_time.slice(0, 10)),
+  ]).size;
 
-  // Erledigt: Status der Einheit oder (bis zum Matching in Schritt 5) passende Garmin-Aktivitäten
-  const cats = CATEGORIES.map((c) => {
-    const planned = sessions.filter((s) => (c.types as readonly string[]).includes(s.type));
-    const marked = planned.filter((s) => s.status === "erledigt").length;
-    const fromGarmin = acts.filter((a) => a.sport === c.sport).length;
-    return { ...c, planned: planned.length, done: Math.min(planned.length, Math.max(marked, fromGarmin)) };
-  });
-  const other = sessions.filter((s) => !CATEGORIES.some((c) => (c.types as readonly string[]).includes(s.type)));
-  const total = sessions.length;
-  const done = cats.reduce((a, c) => a + c.done, 0) + other.filter((s) => s.status === "erledigt").length;
-  const hardDays = new Set(sessions.filter((s) => s.hard === 1).map((s) => s.date)).size;
-
-  const runTypes = CATEGORIES[0].types as readonly string[];
-  const plannedKm = sessions.filter((s) => runTypes.includes(s.type)).reduce((a, s) => a + (s.distance_km ?? 0), 0);
+  const plannedKm = runs.reduce((a, s) => a + (s.distance_km ?? 0), 0);
   const doneKm = acts.filter((a) => a.sport === "run").reduce((a, x) => a + (x.distance_m ?? 0) / 1000, 0);
 
-  // 80/20: absolvierte Zonenzeiten, solange es keine gibt die geplanten Minuten
+  // 80/20: absolvierte Zonenzeiten, solange es keine gibt die geplanten Laufminuten
   const zoneSum = acts.map((a) => parseZones(a.zone_seconds_json)).filter((z): z is number[] => !!z)
     .reduce((a, z) => a.map((v, i) => v + z[i]), [0, 0, 0, 0, 0]);
   let easy = zoneSum[0] + zoneSum[1];
@@ -148,25 +136,32 @@ function WeekSummary({ data }: { data: WeekData }) {
   let source = "absolviert";
   if (easy + hard === 0) {
     source = "geplant";
-    for (const s of sessions) {
-      if (!s.zone || !s.duration_min || s.type.startsWith("gym")) continue;
-      if (s.zone === "Z1" || s.zone === "Z2") easy += s.duration_min; else hard += s.duration_min;
+    for (const s of runs) {
+      for (const b of s.structure ?? (s.zone && s.duration_min ? [{ min: s.duration_min, zone: s.zone }] : [])) {
+        if (b.zone === "Z1" || b.zone === "Z2") easy += b.min; else hard += b.min;
+      }
     }
   }
   const easyPct = easy + hard > 0 ? Math.round((easy / (easy + hard)) * 100) : null;
+  const flex = flexProgress(data.targets, acts);
 
   return (
     <section className="box week-sum" aria-label="Wochenbilanz">
+      {runs.length === 0 && doneKm === 0 ? (
+        <div className="sum-row"><span className="sum-label">Laufen</span><span className="muted">Laufpause diese Woche</span></div>
+      ) : (<>
       <div className="sum-row">
         <span className="sum-label">Laufen</span>
-        <span><b className="sum-num">{km(doneKm)}</b><span className="muted"> von {km(plannedKm)} km</span></span>
+        <span><b className="sum-num">{km(doneKm)}</b><span className="muted">{plannedKm > 0 ? ` von ${km(plannedKm)} km` : " km"}</span></span>
       </div>
-      <div className="meter" role="img" aria-label={`${km(doneKm)} von ${km(plannedKm)} km gelaufen`}>
-        <div style={{ width: `${plannedKm > 0 ? Math.min(100, (doneKm / plannedKm) * 100) : 0}%` }} />
-      </div>
+      {plannedKm > 0 && (
+        <div className="meter" role="img" aria-label={`${km(doneKm)} von ${km(plannedKm)} km gelaufen`}>
+          <div style={{ width: `${Math.min(100, (doneKm / plannedKm) * 100)}%` }} />
+        </div>
+      )}
 
       <div className="sum-stats">
-        <div><b className="sum-num">{done}<span className="muted">/{total}</span></b><span>Einheiten erledigt</span></div>
+        <div><b className="sum-num">{runsDone}<span className="muted">/{runs.length}</span></b><span>Läufe erledigt</span></div>
         <div><b className="sum-num">{hardDays}</b><span>{hardDays === 1 ? "harter Tag" : "harte Tage"}</span></div>
         <div>
           <b className="sum-num">{easyPct == null ? "-" : easyPct}<span className="muted">{easyPct == null ? "" : " %"}</span></b>
@@ -185,36 +180,48 @@ function WeekSummary({ data }: { data: WeekData }) {
         </div>
       )}
 
-      <div className="sum-cats">
-        {cats.filter((c) => c.planned > 0).map((c) => (
-          <span key={c.key} className="sum-cat">
-            <span className="swatch" style={{ background: c.color }} />
-            {c.label} <b>{c.done}/{c.planned}</b>
-          </span>
-        ))}
-      </div>
+      </>)}
+
+      {flex.length > 0 && (
+        <div className="flex-list" aria-label="Wochenziele ohne festen Tag">
+          <span className="flex-head">Frei einteilen</span>
+          {flex.map((f) => <FlexRow key={f.key} f={f} />)}
+        </div>
+      )}
     </section>
   );
 }
 
-function Item({ s, act }: { s: Session; act?: Activity }) {
-  const done = s.status === "erledigt";
+function Check({ color }: { color: string }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" role="img" aria-label="Erledigt" style={{ flex: "0 0 auto", marginTop: 1 }}><path d="M5 12l5 5 9-10" /></svg>
+  );
+}
+
+function Item({ s, act, past }: { s: Session; act?: Activity; past: boolean }) {
+  const done = s.status === "erledigt" || !!act;
+  const missed = !done && (s.status === "verpasst" || past);
   return (
     <div className="item">
-      {done ? (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--z2)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" role="img" aria-label="Erledigt" style={{ flex: "0 0 auto", marginTop: 1 }}><path d="M5 12l5 5 9-10" /></svg>
-      ) : (
-        <span className="swatch" style={{ background: sessionColor(s) }} />
-      )}
+      {done ? <Check color="var(--z2)" /> : <span className="swatch" style={{ background: sessionColor(s), opacity: missed ? 0.4 : 1 }} />}
       <div style={{ minWidth: 0 }}>
-        <span style={{ fontWeight: s.hard ? 600 : 400 }}>{s.title}</span>
-        {act && (
-          <small>
-            Garmin: {act.distance_m ? `${(act.distance_m / 1000).toFixed(1).replace(".", ",")} km` : ""}
-            {act.duration_s ? ` in ${Math.floor(act.duration_s / 60)}:${String(act.duration_s % 60).padStart(2, "0")}` : ""}
-            {act.avg_hr ? `, Ø ${act.avg_hr} bpm` : ""}
-          </small>
-        )}
+        <span style={{ fontWeight: s.hard ? 600 : 400, opacity: missed ? 0.6 : 1 }}>{s.title}</span>
+        {act ? <small>Garmin: {activityFacts(act)}</small>
+          : missed ? <small>Nicht erledigt</small>
+          : s.duration_min ? <small>{s.duration_min} min{s.distance_km ? `, ca. ${km(s.distance_km)} km` : ""}{s.zone ? `, ${s.zone}` : ""}</small> : null}
+      </div>
+    </div>
+  );
+}
+
+function ActivityItem({ a }: { a: Activity }) {
+  const info = sportInfo(a.sport);
+  return (
+    <div className="item">
+      <Check color={info.color} />
+      <div style={{ minWidth: 0 }}>
+        <span>{info.label}</span>
+        <small>Garmin{a.name ? `: ${a.name}` : ""}{activityFacts(a) ? `, ${activityFacts(a)}` : ""}</small>
       </div>
     </div>
   );
