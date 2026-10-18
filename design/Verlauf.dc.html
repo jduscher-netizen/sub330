@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Verlauf</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&amp;family=Big+Shoulders+Display:wght@600;800;900&amp;display=swap">
+<style>
+body{margin:0;background:#23272B}
+a{color:#E9ECEE}a:hover{color:#FFFFFF}
+</style>
+</helmet>
+<div style="width: 390px; height: 1180px; box-sizing: border-box; background: #23272B; color: #E9ECEE; font-family: 'Archivo', system-ui, sans-serif; display: flex; flex-direction: column; position: relative; overflow: hidden">
+
+<header style="padding: 24px 20px 0 20px">
+<h1 style="margin: 0; font-family: 'Big Shoulders Display', 'Oswald', sans-serif; font-weight: 800; font-size: 36px; line-height: 1">Verlauf</h1>
+</header>
+
+<section aria-label="Rennziele" style="padding: 18px 20px 0 20px; display: flex; flex-direction: column">
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 14px 0; border-bottom: 1px solid #3C4248">
+<span style="font-size: 15px; font-weight: 600">WVV Halbmarathon</span>
+<span style="font-family: 'Big Shoulders Display', 'Oswald', sans-serif; font-weight: 800; font-size: 28px; line-height: 1; text-align: right">1:37:59</span>
+<span style="font-size: 13px; color: #A3ABB3">23. Mai 2027, Bestzeit 1:44:42</span>
+<span style="font-size: 13px; color: #EE8A3C; text-align: right">6:43 schneller</span>
+</div>
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 14px 0; border-bottom: 1px solid #3C4248">
+<span style="font-size: 15px; font-weight: 600">Herbstmarathon</span>
+<span style="font-family: 'Big Shoulders Display', 'Oswald', sans-serif; font-weight: 800; font-size: 28px; line-height: 1; text-align: right">3:29:59</span>
+<span style="font-size: 13px; color: #A3ABB3">Oktober 2027, Bestzeit 3:59:09</span>
+<span style="font-size: 13px; color: #EE8A3C; text-align: right">29:10 schneller</span>
+</div>
+</section>
+
+<section aria-label="VO2max" style="padding: 24px 20px 0 20px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; justify-content: space-between; align-items: baseline">
+<h2 style="margin: 0; font-size: 15px; font-weight: 600">VO2max</h2>
+<span style="font-size: 12px; color: #A3ABB3">Beispielwerte</span>
+</div>
+<div style="display: flex; align-items: baseline; gap: 8px"><span style="font-family: 'Big Shoulders Display', 'Oswald', sans-serif; font-weight: 800; font-size: 44px; line-height: 1">51</span><span style="font-size: 13px; color: #4FB394">+2 seit August</span></div>
+<svg viewBox="0 0 350 110" width="350" height="110" role="img" aria-label="VO2max steigt in zwölf Wochen von 49 auf 51" style="display: block">
+<line x1="0" y1="20" x2="350" y2="20" stroke="#3C4248" stroke-width="1"></line>
+<line x1="0" y1="60" x2="350" y2="60" stroke="#3C4248" stroke-width="1"></line>
+<line x1="0" y1="100" x2="350" y2="100" stroke="#3C4248" stroke-width="1"></line>
+<text x="350" y="15" text-anchor="end" font-size="11" fill="#A3ABB3" font-family="Archivo, sans-serif">52</text>
+<text x="350" y="95" text-anchor="end" font-size="11" fill="#A3ABB3" font-family="Archivo, sans-serif">48</text>
+<polyline points="0,80 30,80 60,72 90,70 120,60 150,62 180,60 210,52 240,46 270,42 300,40 320,40" fill="none" stroke="#F3F5F6" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"></polyline>
+<circle cx="320" cy="40" r="4.5" fill="#F3F5F6"></circle>
+</svg>
+</section>
+
+<section aria-label="Zonenverteilung" style="padding: 26px 20px 0 20px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; justify-content: space-between; align-items: baseline">
+<h2 style="margin: 0; font-size: 15px; font-weight: 600">Zonen, letzte 4 Wochen</h2>
+<span style="font-size: 12px; color: #A3ABB3">Ziel 80 % locker</span>
+</div>
+<div style="display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 10px 10px; align-items: center; font-size: 12px; color: #A3ABB3">
+<span>KW 43</span>
+<div role="img" aria-label="KW 43: 84 Prozent locker" style="display: flex; height: 14px; border-radius: 3px; overflow: hidden"><div style="width: 20%; background: #8DB3D6"></div><div style="width: 64%; background: #4FB394"></div><div style="width: 6%; background: #E2C24A"></div><div style="width: 6%; background: #EE8A3C"></div><div style="width: 4%; background: #E2533F"></div></div>
+<span>KW 44</span>
+<div role="img" aria-label="KW 44: 78 Prozent locker" style="display: flex; height: 14px; border-radius: 3px; overflow: hidden"><div style="width: 16%; background: #8DB3D6"></div><div style="width: 62%; background: #4FB394"></div><div style="width: 10%; background: #E2C24A"></div><div style="width: 7%; background: #EE8A3C"></div><div style="width: 5%; background: #E2533F"></div></div>
+<span>KW 45</span>
+<div role="img" aria-label="KW 45: 81 Prozent locker" style="display: flex; height: 14px; border-radius: 3px; overflow: hidden"><div style="width: 18%; background: #8DB3D6"></div><div style="width: 63%; background: #4FB394"></div><div style="width: 5%; background: #E2C24A"></div><div style="width: 8%; background: #EE8A3C"></div><div style="width: 6%; background: #E2533F"></div></div>
+<span>KW 46</span>
+<div role="img" aria-label="KW 46: 82 Prozent locker, laufende Woche" style="display: flex; height: 14px; border-radius: 3px; overflow: hidden; opacity: 0.7"><div style="width: 22%; background: #8DB3D6"></div><div style="width: 60%; background: #4FB394"></div><div style="width: 4%; background: #E2C24A"></div><div style="width: 6%; background: #EE8A3C"></div><div style="width: 8%; background: #E2533F"></div></div>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: #C9D0D6">
+<span style="display: flex; align-items: center; gap: 5px"><span style="width: 9px; height: 9px; border-radius: 2px; background: #8DB3D6"></span>Z1</span>
+<span style="display: flex; align-items: center; gap: 5px"><span style="width: 9px; height: 9px; border-radius: 2px; background: #4FB394"></span>Z2</span>
+<span style="display: flex; align-items: center; gap: 5px"><span style="width: 9px; height: 9px; border-radius: 2px; background: #E2C24A"></span>Z3</span>
+<span style="display: flex; align-items: center; gap: 5px"><span style="width: 9px; height: 9px; border-radius: 2px; background: #EE8A3C"></span>Z4</span>
+<span style="display: flex; align-items: center; gap: 5px"><span style="width: 9px; height: 9px; border-radius: 2px; background: #E2533F"></span>Z5</span>
+</div>
+</section>
+
+<section aria-label="Körperwerte" style="padding: 26px 20px 0 20px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; color: #A3ABB3">Gewicht</span><span style="font-family: 'Big Shoulders Display', 'Oswald', sans-serif; font-weight: 800; font-size: 26px; line-height: 1.1">85,0</span><span style="font-size: 12px; color: #A3ABB3">Ziel 81,5 kg</span></div>
+<div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; color: #A3ABB3">Ruhepuls</span><span style="font-family: 'Big Shoulders Display', 'Oswald', sans-serif; font-weight: 800; font-size: 26px; line-height: 1.1">52</span><span style="font-size: 12px; color: #A3ABB3">7 Tage Ø</span></div>
+<div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; color: #A3ABB3">HRV</span><span style="font-family: 'Big Shoulders Display', 'Oswald', sans-serif; font-weight: 800; font-size: 26px; line-height: 1.1">58</span><span style="font-size: 12px; color: #A3ABB3">ms, ausgeglichen</span></div>
+</section>
+
+<section aria-label="Datenquellen" style="margin-top: 26px; padding: 18px 20px 0 20px; border-top: 1px solid #3C4248; display: flex; flex-direction: column; gap: 10px">
+<h2 style="margin: 0; font-size: 15px; font-weight: 600">Datenquellen</h2>
+<div style="display: flex; align-items: center; gap: 10px; font-size: 14px"><span style="width: 8px; height: 8px; border-radius: 50%; background: #4FB394"></span><span style="flex: 1 1 auto">Garmin</span><span style="color: #A3ABB3; font-size: 13px">synchronisiert vor 8 Min.</span></div>
+<div style="display: flex; align-items: center; gap: 10px; font-size: 14px"><span style="width: 8px; height: 8px; border-radius: 50%; background: #4FB394"></span><span style="flex: 1 1 auto">Strava</span><span style="color: #A3ABB3; font-size: 13px">synchronisiert vor 2 Std.</span></div>
+</section>
+
+<nav aria-label="Hauptnavigation" style="position: absolute; left: 0; right: 0; bottom: 0; height: 76px; background: #1C1F22; border-top: 1px solid #33383D; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); padding-bottom: 8px; box-sizing: border-box">
+<a href="Main.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: #8A929A; text-decoration: none; font-size: 12px; font-weight: 500">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"></rect><circle cx="8" cy="6.5" r="0.8"></circle><circle cx="16" cy="6.5" r="0.8"></circle><path d="M9 14h6"></path></svg>Heute</a>
+<a href="Plan.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: #8A929A; text-decoration: none; font-size: 12px; font-weight: 500">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg>Plan</a>
+<a href="Verlauf.dc.html" aria-current="page" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: #F3F5F6; text-decoration: none; font-size: 12px; font-weight: 700">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l5-6 4 4 8-9"></path><path d="M3 21h18"></path></svg>Verlauf</a>
+<a href="Main.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: #8A929A; text-decoration: none; font-size: 12px; font-weight: 500">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"></path></svg>Profil</a>
+</nav>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1180}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>
