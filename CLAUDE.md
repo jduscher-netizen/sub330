@@ -87,6 +87,11 @@ Trainingsphilosophie: polarisiert 80/20.
 - Nutzung der inoffiziellen Python-Bibliothek `garminconnect` (python-garminconnect). Liefert Training Readiness inkl. Faktoren, HRV, Schlaf, Body Battery, Trainingsstatus, VO2max, Aktivitäten.
 - Läuft nur serverseitig. Login-Tokens nie im Frontend.
 - Risiko: Garmin kann Endpunkte ändern. Fehler müssen im Sync-Status sichtbar werden, die App darf dann nicht abstürzen.
+- Jans Garmin-Konto hat Zwei-Faktor-Anmeldung. Ablauf:
+  - Erst-Login per Workflow `garmin-login` (manuell gestartet): meldet sich mit `GARMIN_EMAIL`/`GARMIN_PASSWORD` an (`return_on_mfa=True`), Garmin schickt den Code. Jan tippt den Code in der App unter Profil › Garmin verbinden ein, die App legt ihn kurzzeitig in D1 ab. Der Workflow fragt `/api/garmin/mfa` bis zu 5 Minuten ab und schließt mit `resume_login` ab.
+  - Danach speichert der Workflow die Tokens (`client.dumps()`) über `/api/garmin/tokens` verschlüsselt in D1.
+  - Jeder stündliche Sync lädt die Tokens von dort (`login(tokenstore=<json>)`), schreibt erneuerte Tokens zurück und braucht kein Passwort und keinen Code.
+  - Schlägt der Token-Login fehl: Sync-Status zeigt "Garmin neu verbinden", kein stiller Fehler.
 
 ### Strava
 - OAuth plus Webhook für neue Aktivitäten.
