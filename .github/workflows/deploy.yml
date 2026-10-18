@@ -58,5 +58,15 @@ jobs:
             printf '%s' "$APP_PASSWORD" | npx wrangler pages secret put APP_PASSWORD --project-name sub330
           fi
 
+      - name: Token für den Sync-Knopf an Cloudflare übergeben
+        env:
+          GH_ACTIONS_TOKEN: ${{ secrets.GH_ACTIONS_TOKEN }}
+        run: |
+          if [ -z "${GH_ACTIONS_TOKEN}" ]; then
+            echo "::warning::GitHub-Secret GH_ACTIONS_TOKEN fehlt, der Knopf Jetzt synchronisieren bleibt aus."
+          else
+            printf '%s' "$GH_ACTIONS_TOKEN" | npx wrangler pages secret put GH_ACTIONS_TOKEN --project-name sub330
+          fi
+
       - name: Veröffentlichen
         run: npx wrangler pages deploy dist --project-name sub330 --branch main --commit-dirty=true

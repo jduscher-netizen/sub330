@@ -1,11 +1,13 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { api, isDemo, type GarminStatus, type OverviewData, type Result, type SyncLogEntry, type SyncState, type Zone } from "../api";
-import { Loading, Problem } from "../components/ui";
+import { Loading, Problem, SyncNowButton } from "../components/ui";
 import { ago, dateTime } from "../format";
 import { ZONES } from "../zones";
 
 export function Profil() {
   const [res, setRes] = useState<Result<OverviewData> | null>(null);
+  const [rev, setRev] = useState(0);
+  const reload = () => { api.overview().then(setRes); setRev((n) => n + 1); };
   useEffect(() => { api.overview().then(setRes); }, []);
 
   return (
@@ -19,9 +21,10 @@ export function Profil() {
             <Source name="Garmin" s={res.data.sync.find((x) => x.source === "garmin")} />
           </div>
         )}
+        {res?.ok && <SyncNowButton onDone={reload} />}
       </section>
 
-      {res?.ok && <Garmin />}
+      {res?.ok && <Garmin key={rev} />}
 
       <section className="section" aria-label="Herzfrequenzzonen">
         <h2>Herzfrequenzzonen</h2>

@@ -108,7 +108,7 @@ Trainingsphilosophie: polarisiert 80/20.
 - Login: eigener Passwort-Login (siehe Zugangsschutz)
 - Garmin-Sync: Python-Job per GitHub Actions Cron (stündlich 6 bis 22 Uhr), schreibt direkt über die Cloudflare-D1-API in die Datenbank (kein öffentlicher Schreib-Endpunkt)
 - Deployment: GitHub Actions mit Wrangler
-- Secrets ausschließlich in GitHub Secrets bzw. Cloudflare: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `GARMIN_EMAIL`, `GARMIN_PASSWORD`, `APP_PASSWORD`
+- Secrets ausschließlich in GitHub Secrets bzw. Cloudflare: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `GARMIN_EMAIL`, `GARMIN_PASSWORD`, `APP_PASSWORD`, `GH_ACTIONS_TOKEN` (fine-grained, nur dieses Repo, Actions: Lesen und Schreiben; kommt per Deploy als Pages-Secret für den Sync-Knopf)
 
 ### Datenmodell (Entwurf)
 - `planned_sessions`: Datum, Typ, Zone, Umfang, Priorität, Status, verknüpfte Aktivität
@@ -119,36 +119,37 @@ Trainingsphilosophie: polarisiert 80/20.
 
 ## Design
 
-Konzept "Startnummer": Die Trainingsbereitschaft erscheint auf dem Heute-Screen als Startnummer (helles Papier, Sicherheitsnadeln, gestrichelte Abrisskante) auf dunklem Asphalt. Der Streifen oben hat die Farbe der Zone der heutigen Einheit. Das ist das eine auffällige Element; alles andere bleibt ruhig.
+Konzept "Startnummer" im Look "Nachtlauf" (seit 18.10.2026, vorher grauer Asphalt): Die Trainingsbereitschaft erscheint auf dem Heute-Screen als Startnummer (helles Papier, Sicherheitsnadeln, gestrichelte Abrisskante) auf tiefem Nachtblau mit leichtem Lichtschein oben. Akzentfarbe Neon-Orange für Primärbuttons, aktiven Tab, Faktor-Balken und Sync-Knopf. Der Streifen oben hat die Farbe der Zone der heutigen Einheit. Das ist das eine auffällige Element; alles andere bleibt ruhig.
 
-Referenz-Screens (Design-Canvas, Quelle in `design/`): https://claude.ai/artifact/9Sjd2fHqaiqrRy366v2uKt
+Referenz-Screens (Design-Canvas, Quelle in `design/`, noch im alten grauen Look; Farben gelten aus der Tabelle unten): https://claude.ai/artifact/9Sjd2fHqaiqrRy366v2uKt
 - `design/Main.dc.html`: Heute
 - `design/Plan.dc.html`: Wochenplan
 - `design/Umplanen.dc.html`: Tag fällt aus
 - `design/Verlauf.dc.html`: Verlauf und Datenquellen
 
-Farben:
+Farben (CSS-Variablen in `src/styles.css`, Namen aus historischen Gründen "asphalt"):
 
 | Token | Wert | Einsatz |
 |---|---|---|
-| asphalt | #23272B | Hintergrund |
-| asphalt-raised | #2E3338 | hervorgehobene Zeilen, Infoboxen |
-| line | #3C4248 | Trennlinien, Balken-Hintergrund |
-| text | #E9ECEE | Text auf Asphalt |
-| text-muted | #A3ABB3 | Nebentext auf Asphalt |
-| bib | #F3F5F6 | Startnummer, Bottom Sheets, Primärbutton |
-| ink | #15181B | Text auf bib |
-| z1 | #8DB3D6 | Recovery |
-| z2 | #4FB394 | GA1 |
-| z3 | #E2C24A | GA2 |
-| z4 | #EE8A3C | Schwelle |
-| z5 | #E2533F | VO2max |
-| gym | #9AA1A8 | Kraft |
+| asphalt | #0F1B2D | Hintergrund (Nachtblau) |
+| asphalt-raised | #18263B | hervorgehobene Zeilen, Infoboxen |
+| line | #25364F | Trennlinien, Balken-Hintergrund |
+| text | #F2F5FA | Text auf Asphalt |
+| text-muted | #9FB0C8 | Nebentext auf Asphalt |
+| bib | #F6F8FB | Startnummer, Bottom Sheets |
+| ink | #0F1B2D | Text auf bib und auf accent |
+| accent | #FF6B2C | Primärbutton, aktiver Tab, Faktor-Balken, Sync-Knopf, Logo auf der Startnummer |
+| z1 | #8EC5FF | Recovery |
+| z2 | #2ED39A | GA1 |
+| z3 | #FFE14D | GA2 |
+| z4 | #FFA62B | Schwelle |
+| z5 | #FF4D6D | VO2max |
+| gym | #A9B8CC | Kraft |
 
 Schrift: Big Shoulders Display (Zahlen, Titel, Startnummer), Archivo (alle UI-Texte). Beide von Google Fonts.
 
 Regeln:
-- Zonenfarben nur für Zonen und Einheiten-Typen, nie als Deko
+- Zonenfarben nur für Zonen und Einheiten-Typen, nie als Deko; für Aktionen und Hervorhebung nur accent
 - Inhalte als Zeilen mit Trennlinien, keine Karten-Raster
 - Touch-Ziele mindestens 44 px, mobil zuerst (390 px Breite)
 - Navigation unten: Heute, Plan, Verlauf, Profil
@@ -172,7 +173,8 @@ Regeln:
   - `sync/garmin_sync.py`: Trainingsbereitschaft inkl. Faktoren, HRV, Schlaf, Body Battery, Ruhepuls, Stress, akute Last, VO2max, Gewicht (heute und gestern) und Aktivitäten der letzten 3 Tage inkl. Zonenzeiten. Schreibt per D1-API (`sync/d1.py`, Datenbank-ID wird über den Namen `sub330` gesucht). Fehler einzelner Endpunkte brechen nicht ab, stehen aber in `sync_log`. Ohne gültige Tokens: "Garmin neu verbinden".
   - `sync/garmin_login.py`: Zwei-Faktor-Login, Fortschritt als `sync_log`-Eintrag mit `source = 'garmin_login'`
   - Workflows `garmin-login.yml` (manuell, startet danach direkt einen Sync) und `garmin-sync.yml` (Cron 4 bis 21 UTC, Skript filtert auf 6 bis 22 Uhr Berlin). Beide in der Concurrency-Gruppe `garmin`.
-  - API: `GET /api/garmin` (Verbindung, letzter Login, letzte 10 Sync-Läufe), `POST /api/garmin/mfa` (Code speichern)
+  - API: `GET /api/garmin` (Verbindung, letzter Login, letzte 10 Sync-Läufe), `POST /api/garmin/mfa` (Code speichern), `POST /api/garmin/sync` (startet den Workflow garmin-sync über die GitHub-API, braucht `GH_ACTIONS_TOKEN`)
+  - Sync-Knopf: Tipp auf die Sync-Pille im Heute-Kopf oder "Jetzt synchronisieren" im Profil; die App wartet auf den neuen Eintrag in `sync_log` und lädt dann neu
   - UI: Profil › Garmin verbinden (Code-Eingabe, wartet auf das Ergebnis) und Sync-Protokoll
   - Tests ohne Netz: `cd sync && python -m unittest`
 - Inbetriebnahme: in GitHub Actions "Garmin-Login" starten, Code in der App unter Profil eintippen.

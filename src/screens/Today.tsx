@@ -17,7 +17,8 @@ function verdict(score: number | null, hardToday: boolean): string {
 
 export function Today() {
   const [res, setRes] = useState<Result<TodayData> | null>(null);
-  useEffect(() => { api.today().then(setRes); }, []);
+  const load = () => api.today().then(setRes);
+  useEffect(() => { load(); }, []);
 
   if (!res) return <div className="screen"><Loading /></div>;
   if (!res.ok) {
@@ -43,7 +44,7 @@ export function Today() {
           <h1>{longDate(date)}</h1>
           <p className="sub">{weeksUntil(HM_DATE)} Wochen bis Würzburg{isDemo && <span className="demo-flag">, Beispieldaten</span>}</p>
         </div>
-        <SyncPill sync={sync} />
+        <SyncPill sync={sync} onDone={load} />
       </header>
 
       <Bib

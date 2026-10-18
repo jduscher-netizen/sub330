@@ -1,5 +1,5 @@
-import { useState, type FormEvent, type ReactNode } from "react";
-import { api, type SyncState } from "../api";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { api, isDemo, type SyncState } from "../api";
 import { ago } from "../format";
 
 export type Tab = "heute" | "plan" | "verlauf" | "profil";
@@ -28,16 +28,94 @@ export function TabBar({ current }: { current: Tab }) {
   );
 }
 
-export function SyncPill({ sync }: { sync: SyncState[] }) {
+const SYNC_POLL_MS = 5000;
+const SYNC_MAX_MS = 4 * 60_000;
+
+export type SyncRun = { state: "idle" | "running" | "done" | "error"; message: string | null };
+
+/** "Jetzt synchronisieren": startet den Workflow und wartet auf den neuen Eintrag im Sync-Protokoll. */
+export function useGarminSync(onDone?: () => void) {
+  const [run, setRun] = useState<SyncRun>({ state: "idle", message: null });
+  const timer = useRef<ReturnType<typeof setInterval>>(undefined);
+  useEffect(() => () => clearInterval(timer.current), []);
+
+  async function start() {
+    if (run.state === "running") return;
+    setRun({ state: "running", message: "Sync gestartet" });
+    const before = await api.garmin();
+    const lastId = before.ok ? Math.max(0, ...before.data.log.map((l) => l.id ?? 0)) : 0;
+    const res = await api.syncNow();
+    if (!res.ok) return setRun({ state: "error", message: res.message ?? "Sync konnte nicht starten." });
+    if (isDemo) {
+      setTimeout(() => setRun({ state: "done", message: "Synchronisiert" }), 2500);
+      return;
+    }
+    const t0 = Date.now();
+    clearInterval(timer.current);
+    timer.current = setInterval(async () => {
+      const r = await api.garmin();
+      const fresh = r.ok ? r.data.log.find((l) => (l.id ?? 0) > lastId && l.finished_at) : undefined;
+      if (fresh) {
+        clearInterval(timer.current);
+        setRun(fresh.ok === 1 ? { state: "done", message: "Synchronisiert" } : { state: "error", message: fresh.message ?? "Sync fehlgeschlagen." });
+        onDone?.();
+      } else if (Date.now() - t0 > SYNC_MAX_MS) {
+        clearInterval(timer.current);
+        setRun({ state: "error", message: "Kein Ergebnis nach 4 Minuten. Sieh im Sync-Protokoll nach." });
+        onDone?.();
+      }
+    }, SYNC_POLL_MS);
+  }
+
+  return { run, start };
+}
+
+const SYNC_PATHS = (<><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8" /><path d="M4 3v5h5" /><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16" /><path d="M20 21v-5h-5" /></>);
+const SYNC_ICON_SMALL = (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{SYNC_PATHS}</svg>
+);
+const SYNC_ICON = (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    {SYNC_PATHS}
+  </svg>
+);
+
+/** Sync-Status im Kopf des Heute-Screens; ein Tipp startet den Sync. */
+export function SyncPill({ sync, onDone }: { sync: SyncState[]; onDone?: () => void }) {
+  const { run, start } = useGarminSync(onDone);
   const g = sync.find((s) => s.source === "garmin");
   const ok = g?.last_ok_flag === 1;
-  const color = !g ? "var(--text-faint)" : ok ? "var(--z2)" : "var(--z5)";
-  const text = !g ? "Garmin nicht verbunden" : ok ? `Garmin ${ago(g.last_ok)}` : "Garmin-Sync gestört";
+  const busy = run.state === "running";
+  const failed = run.state === "error" || (g != null && !ok);
+  const color = !g ? "var(--text-faint)" : failed ? "var(--z5)" : "var(--z2)";
+  const text = busy ? "Sync läuft"
+    : run.state === "error" ? "Sync fehlgeschlagen"
+    : !g ? "Garmin nicht verbunden"
+    : ok ? `Garmin ${ago(g.last_ok)}` : "Garmin-Sync gestört";
   return (
-    <a className="sync-pill" href={`${location.search}#/profil`} style={{ textDecoration: "none" }}>
+    <button
+      type="button" className={`sync-pill${busy ? " busy" : ""}`} onClick={start} disabled={busy}
+      aria-label={`${text}. Jetzt synchronisieren`} title={run.state === "error" ? run.message ?? undefined : "Jetzt synchronisieren"}
+    >
       <span className="dot" style={{ background: color }} />
       {text}
-    </a>
+      {SYNC_ICON_SMALL}
+    </button>
+  );
+}
+
+/** Breiter Knopf mit Statuszeile, z. B. im Profil */
+export function SyncNowButton({ onDone }: { onDone?: () => void }) {
+  const { run, start } = useGarminSync(onDone);
+  const busy = run.state === "running";
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <button type="button" className={`btn btn-accent-ghost btn-block${busy ? " busy" : ""}`} onClick={start} disabled={busy}>
+        {SYNC_ICON}{busy ? "Sync läuft, dauert etwa eine Minute" : "Jetzt synchronisieren"}
+      </button>
+      {run.state === "done" && <span className="sub" style={{ margin: 0 }} aria-live="polite">{run.message}</span>}
+      {run.state === "error" && <span role="alert" style={{ color: "var(--z5)", fontSize: 14 }}>{run.message}</span>}
+    </div>
   );
 }
 
@@ -79,7 +157,7 @@ function Login({ reason }: { reason: string }) {
           <input
             id="pw" type="password" autoComplete="current-password" value={password}
             onChange={(e) => setPassword(e.target.value)} required
-            style={{ height: 48, borderRadius: 10, border: "1px solid #5a6168", background: "var(--asphalt-deep)", color: "var(--text)", padding: "0 14px", fontSize: 16, fontFamily: "inherit" }}
+            style={{ height: 48, borderRadius: 10, border: "1px solid var(--ghost-line)", background: "var(--asphalt-deep)", color: "var(--text)", padding: "0 14px", fontSize: 16, fontFamily: "inherit" }}
           />
           {error && <span role="alert" style={{ color: "var(--z5)", fontSize: 14 }}>{error}</span>}
           <button type="submit" className="btn btn-primary" disabled={busy || !password}>{busy ? "Prüfe" : "Anmelden"}</button>

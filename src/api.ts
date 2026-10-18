@@ -78,5 +78,6 @@ export const api = {
   week: (start?: string) => get<WeekData>(`/api/week${start ? `?start=${start}` : ""}`, () => demoWeek(start)),
   overview: () => get<OverviewData>("/api/overview", demoOverview),
   garmin: () => get<GarminStatus>("/api/garmin", demoGarmin),
+  syncNow: () => (isDemo ? new Promise<{ ok: boolean; message?: string }>((r) => setTimeout(() => r({ ok: true }), 600)) : post("/api/garmin/sync")),
   sendMfaCode: (code: string) => (isDemo ? Promise.resolve({ ok: true, message: undefined }) : post("/api/garmin/mfa", { code })),
 };

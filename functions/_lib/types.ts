@@ -2,6 +2,8 @@ export interface Env {
   DB: D1Database;
   /** Passwort für den Login (Pages-Secret) */
   APP_PASSWORD?: string;
+  /** GitHub-Token (fine-grained, nur Actions: write auf dieses Repo) für "Jetzt synchronisieren" */
+  GH_ACTIONS_TOKEN?: string;
   /** Nur lokal: "1" schaltet die Zugangsprüfung ab (.dev.vars) */
   DEV_NO_AUTH?: string;
 }
