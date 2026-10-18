@@ -1,0 +1,14 @@
+{
+  "name": "SUB330",
+  "short_name": "SUB330",
+  "description": "Trainings-App für Halbmarathon Sub 1:38 und Marathon Sub 3:30",
+  "lang": "de",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#23272B",
+  "theme_color": "#23272B",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

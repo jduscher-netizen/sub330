@@ -8,3 +8,5 @@ __pycache__/
 .garminconnect/
 *.log
 .DS_Store
+.dev.vars
+.wrangler/

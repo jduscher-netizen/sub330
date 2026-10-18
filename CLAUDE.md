@@ -63,10 +63,9 @@ Trainingsphilosophie: polarisiert 80/20.
   - Wochenumfang nie mehr als 10 % über Plan
 
 ### 4. Ist-Daten und Abgleich
-- Garmin ist Primärquelle für Aktivitäten und Gesundheitswerte, Strava optional
+- Garmin ist die einzige Datenquelle der App (Aktivitäten und Gesundheitswerte). Strava bleibt außen vor, weil Garmin ohnehin zu Strava synchronisiert
 - Automatisches Matching geplant zu absolviert über Datum, Sportart und Dauer (Toleranz einstellbar)
 - Jede Zuordnung manuell korrigierbar (Aktivität einer anderen Einheit zuweisen oder lösen)
-- Duplikate erkennen (gleiche Aktivität aus Garmin und Strava)
 - Sync-Status sichtbar: letzte erfolgreiche Synchronisation je Quelle, Fehlermeldung bei Problemen
 
 ### 5. Auswertung
@@ -88,22 +87,27 @@ Trainingsphilosophie: polarisiert 80/20.
 - Läuft nur serverseitig. Login-Tokens nie im Frontend.
 - Risiko: Garmin kann Endpunkte ändern. Fehler müssen im Sync-Status sichtbar werden, die App darf dann nicht abstürzen.
 - Jans Garmin-Konto hat Zwei-Faktor-Anmeldung. Ablauf:
-  - Erst-Login per Workflow `garmin-login` (manuell gestartet): meldet sich mit `GARMIN_EMAIL`/`GARMIN_PASSWORD` an (`return_on_mfa=True`), Garmin schickt den Code. Jan tippt den Code in der App unter Profil › Garmin verbinden ein, die App legt ihn kurzzeitig in D1 ab. Der Workflow fragt `/api/garmin/mfa` bis zu 5 Minuten ab und schließt mit `resume_login` ab.
-  - Danach speichert der Workflow die Tokens (`client.dumps()`) über `/api/garmin/tokens` verschlüsselt in D1.
+  - Erst-Login per Workflow `garmin-login` (manuell gestartet): meldet sich mit `GARMIN_EMAIL`/`GARMIN_PASSWORD` an (`return_on_mfa=True`), Garmin schickt den Code. Jan tippt den Code in der App unter Profil › Garmin verbinden ein, die App legt ihn kurzzeitig in D1 ab. Der Workflow liest die Tabelle `garmin_mfa` bis zu 5 Minuten lang über die D1-API und schließt mit `resume_login` ab.
+  - Danach speichert der Workflow die Tokens (`client.dumps()`) in der Tabelle `garmin_auth`.
   - Jeder stündliche Sync lädt die Tokens von dort (`login(tokenstore=<json>)`), schreibt erneuerte Tokens zurück und braucht kein Passwort und keinen Code.
   - Schlägt der Token-Login fehl: Sync-Status zeigt "Garmin neu verbinden", kein stiller Fehler.
 
 ### Strava
-- OAuth plus Webhook für neue Aktivitäten.
+- Nicht in der App. Für Analysen im Chat nutzt Claude den Strava-Connector direkt.
+
+### Zugangsschutz
+- Alle `/api/*`-Endpunkte außer `/api/health` prüfen das JWT von Cloudflare Access (`functions/_lib/access.ts`). Ohne die Variablen `ACCESS_TEAM_DOMAIN` und `ACCESS_AUD` bleiben sie gesperrt (401).
+- Lokal: `.dev.vars` mit `DEV_NO_AUTH=1`.
+- Beispieldaten ohne Anmeldung: `/?demo`.
 
 ### Stack (alles bei Cloudflare, ein Anbieter)
 - Frontend: PWA (React + Vite), mobil zuerst, gehostet auf Cloudflare Pages
 - API: Cloudflare Pages Functions (Workers) unter `/api/*`
 - Datenbank: Cloudflare D1 (SQLite)
 - Login: Cloudflare Access (Zero Trust), nur Jans E-Mail-Adresse, Einmal-Code per Mail
-- Garmin-Sync: Python-Job per GitHub Actions Cron (stündlich 6 bis 22 Uhr), schickt die Daten mit geheimem Token an `/api/ingest`
+- Garmin-Sync: Python-Job per GitHub Actions Cron (stündlich 6 bis 22 Uhr), schreibt direkt über die Cloudflare-D1-API in die Datenbank (kein öffentlicher Schreib-Endpunkt)
 - Deployment: GitHub Actions mit Wrangler
-- Secrets ausschließlich in GitHub Secrets bzw. Cloudflare: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `GARMIN_EMAIL`, `GARMIN_PASSWORD`, `INGEST_TOKEN`
+- Secrets ausschließlich in GitHub Secrets bzw. Cloudflare: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `GARMIN_EMAIL`, `GARMIN_PASSWORD`
 
 ### Datenmodell (Entwurf)
 - `planned_sessions`: Datum, Typ, Zone, Umfang, Priorität, Status, verknüpfte Aktivität
@@ -156,7 +160,7 @@ Regeln:
 4. Trainingsplan-Ansicht und Plan-Import
 5. Matching und manuelle Korrektur
 6. Umplanen mit Regeln
-7. Strava-Anbindung
+7. (entfällt vorerst) Strava-Anbindung, nur falls Garmin nicht reicht
 8. Auswertungen
 
 ## Arbeitsweise
