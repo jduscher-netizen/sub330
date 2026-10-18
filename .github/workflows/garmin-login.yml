@@ -34,8 +34,6 @@ jobs:
         working-directory: sync
         run: python garmin_login.py
 
-      - name: Ersten Sync mit 8 Wochen Historie
+      - name: Ersten Sync starten
         working-directory: sync
-        env:
-          SYNC_DAYS: "56"
         run: python garmin_sync.py

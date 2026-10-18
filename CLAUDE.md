@@ -184,7 +184,7 @@ Regeln:
   - Plan ändern: Generator anpassen und als neue Migration ausgeben (die alte Migration nicht ändern, sie ist schon angewendet).
 - Plan-Screen: Wochenbilanz (Lauf-km, Läufe erledigt, harte Tage, 80/20, Wochenziele als Punkte) und pro Tag alle Garmin-Aktivitäten. Läufe werden in der Anzeige dem geplanten Lauf am selben Tag zugeordnet (vorläufig, das echte Matching ist Schritt 5).
 - Heute-Screen: "Schon erledigt" (Aktivitäten von heute), Wochenziele und ein Hinweis, was heute passt (Regeln: nie zwei harte Tage hintereinander, kein Bein-Gym vor Intervallen oder Long Run), in `src/training.ts`.
-- Historie: Garmin-Login lädt beim ersten Sync 8 Wochen nach; manuell über "Garmin-Sync" mit Eingabe `days` (maximal 120).
+- Historie wird nicht nachgeladen, die App sammelt ab dem ersten Sync (Wunsch von Jan). Falls doch nötig: "Garmin-Sync" manuell mit Eingabe `days` (maximal 120).
 - Nächster Schritt 3: Heute-Screen mit echten Daten prüfen und verfeinern.
 
 ## Arbeitsweise
