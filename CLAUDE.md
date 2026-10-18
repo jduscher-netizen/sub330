@@ -168,11 +168,15 @@ Regeln:
 
 - Schritt 1 erledigt: App live auf https://sub330.pages.dev (Beispieldaten: `/?demo`), D1 verbunden, Passwort-Login aktiv, Deploy per GitHub Actions bei jedem Push auf `main`.
 - GitHub-Secrets vorhanden: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `GARMIN_EMAIL`, `GARMIN_PASSWORD`, `APP_PASSWORD`.
-- Nächster Schritt 2, Garmin-Sync:
-  - `sync/garmin_sync.py` mit `garminconnect` (getestet mit 0.3.19, braucht Python 3.12+): Training Readiness inkl. Faktoren, HRV, Schlaf, Body Battery, Ruhepuls, VO2max, Gewicht, Aktivitäten der letzten 3 Tage
-  - Schreiben direkt in D1 über die Cloudflare-API (`POST /accounts/{id}/d1/database/{db}/query`), Tabellen siehe `migrations/0001_init.sql`
-  - Workflows: `garmin-login.yml` (manuell, Zwei-Faktor-Ablauf wie unter Technik › Garmin) und `garmin-sync.yml` (Cron stündlich 6 bis 22 Uhr Ortszeit)
-  - API und UI: `POST /api/garmin/mfa` (Code speichern) und "Garmin verbinden" im Profil-Screen; jeder Lauf schreibt einen Eintrag in `sync_log`
+- Schritt 2 umgesetzt (Garmin-Sync), wartet auf den ersten echten Login:
+  - `sync/garmin_sync.py`: Trainingsbereitschaft inkl. Faktoren, HRV, Schlaf, Body Battery, Ruhepuls, Stress, akute Last, VO2max, Gewicht (heute und gestern) und Aktivitäten der letzten 3 Tage inkl. Zonenzeiten. Schreibt per D1-API (`sync/d1.py`, Datenbank-ID wird über den Namen `sub330` gesucht). Fehler einzelner Endpunkte brechen nicht ab, stehen aber in `sync_log`. Ohne gültige Tokens: "Garmin neu verbinden".
+  - `sync/garmin_login.py`: Zwei-Faktor-Login, Fortschritt als `sync_log`-Eintrag mit `source = 'garmin_login'`
+  - Workflows `garmin-login.yml` (manuell, startet danach direkt einen Sync) und `garmin-sync.yml` (Cron 4 bis 21 UTC, Skript filtert auf 6 bis 22 Uhr Berlin). Beide in der Concurrency-Gruppe `garmin`.
+  - API: `GET /api/garmin` (Verbindung, letzter Login, letzte 10 Sync-Läufe), `POST /api/garmin/mfa` (Code speichern)
+  - UI: Profil › Garmin verbinden (Code-Eingabe, wartet auf das Ergebnis) und Sync-Protokoll
+  - Tests ohne Netz: `cd sync && python -m unittest`
+- Inbetriebnahme: in GitHub Actions "Garmin-Login" starten, Code in der App unter Profil eintippen.
+- Nächster Schritt 3: Heute-Screen mit echten Daten prüfen und verfeinern.
 
 ## Arbeitsweise
 

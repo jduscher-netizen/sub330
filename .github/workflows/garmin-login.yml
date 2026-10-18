@@ -1,0 +1,39 @@
+name: Garmin-Login
+
+# Manuell starten. Garmin schickt einen Code, den Jan in der App unter
+# Profil › Garmin verbinden eintippt. Das Skript wartet bis zu 5 Minuten darauf.
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: garmin
+  cancel-in-progress: false
+
+jobs:
+  login:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      GARMIN_EMAIL: ${{ secrets.GARMIN_EMAIL }}
+      GARMIN_PASSWORD: ${{ secrets.GARMIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: sync/requirements.txt
+
+      - name: Abhängigkeiten installieren
+        run: pip install -r sync/requirements.txt
+
+      - name: Bei Garmin anmelden
+        working-directory: sync
+        run: python garmin_login.py
+
+      - name: Ersten Sync starten
+        working-directory: sync
+        run: python garmin_sync.py

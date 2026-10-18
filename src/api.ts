@@ -1,4 +1,4 @@
-import { demoOverview, demoToday, demoWeek } from "./demo";
+import { demoGarmin, demoOverview, demoToday, demoWeek } from "./demo";
 
 export type Zone = "Z1" | "Z2" | "Z3" | "Z4" | "Z5";
 
@@ -37,6 +37,8 @@ export interface Race { id: number; name: string; date: string | null; date_labe
 export interface TodayData { date: string; metrics: Metrics | null; sessions: Session[]; sync: SyncState[] }
 export interface WeekData { start: string; end: string; sessions: Session[]; activities: Activity[] }
 export interface OverviewData { races: Race[]; history: Partial<Metrics>[]; sync: SyncState[] }
+export interface SyncLogEntry { id?: number; started_at: string; finished_at: string | null; ok: number; message: string | null }
+export interface GarminStatus { connected: boolean; tokens_updated_at: string | null; login: SyncLogEntry | null; log: SyncLogEntry[] }
 
 export type Result<T> = { ok: true; data: T } | { ok: false; status: number; message: string };
 
@@ -75,4 +77,6 @@ export const api = {
   today: () => get<TodayData>("/api/today", demoToday),
   week: (start?: string) => get<WeekData>(`/api/week${start ? `?start=${start}` : ""}`, () => demoWeek(start)),
   overview: () => get<OverviewData>("/api/overview", demoOverview),
+  garmin: () => get<GarminStatus>("/api/garmin", demoGarmin),
+  sendMfaCode: (code: string) => (isDemo ? Promise.resolve({ ok: true, message: undefined }) : post("/api/garmin/mfa", { code })),
 };

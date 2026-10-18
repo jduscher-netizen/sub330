@@ -1,4 +1,4 @@
-import type { OverviewData, Session, TodayData, WeekData } from "./api";
+import type { GarminStatus, OverviewData, Session, TodayData, WeekData } from "./api";
 import { addDays, mondayOf, todayIso } from "./format";
 
 // Beispieldaten für die Ansicht mit ?demo, solange noch keine echten Daten da sind.
@@ -70,5 +70,19 @@ export function demoOverview(): OverviewData {
     ],
     history: [49, 49, 49.4, 49.5, 50, 49.9, 50, 50.4, 50.7, 50.9, 51, 51].map((v, i) => ({ date: addDays(todayIso(), (i - 11) * 7), vo2max: v, resting_hr: 52, hrv_last_night: 58, weight_kg: 85 })),
     sync: demoToday().sync,
+  };
+}
+
+export function demoGarmin(): GarminStatus {
+  const at = (min: number) => new Date(Date.now() - min * 60_000).toISOString();
+  return {
+    connected: true,
+    tokens_updated_at: at(8),
+    login: { started_at: at(60 * 24 * 3), finished_at: at(60 * 24 * 3 - 1), ok: 1, message: "Garmin verbunden" },
+    log: [
+      { started_at: at(8), finished_at: at(8), ok: 1, message: "2 Tage Gesundheitswerte, 1 Aktivität" },
+      { started_at: at(68), finished_at: at(68), ok: 1, message: "2 Tage Gesundheitswerte, 1 Aktivität" },
+      { started_at: at(128), finished_at: at(128), ok: 0, message: "Teilweise fehlgeschlagen (2 Tage Gesundheitswerte, 1 Aktivität). HRV 2026-10-18: 503" },
+    ],
   };
 }

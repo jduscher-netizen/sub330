@@ -1,0 +1,35 @@
+name: Garmin-Sync
+
+# Stündlich von 6 bis 22 Uhr Ortszeit. GitHub rechnet in UTC, daher ein weiteres Fenster;
+# das Skript überspringt Läufe außerhalb von 6 bis 22 Uhr in Europe/Berlin.
+on:
+  schedule:
+    - cron: "7 4-21 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: garmin
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: sync/requirements.txt
+
+      - name: Abhängigkeiten installieren
+        run: pip install -r sync/requirements.txt
+
+      - name: Garmin synchronisieren
+        working-directory: sync
+        run: python garmin_sync.py

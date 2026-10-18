@@ -59,6 +59,14 @@ export function ago(iso: string | null): string {
   return `vor ${Math.round(h / 24)} Tagen`;
 }
 
+/** Zeitpunkt aus D1 (UTC) in Ortszeit, z. B. "18.10. 16:07" */
+export function dateTime(iso: string | null): string {
+  if (!iso) return "";
+  const t = Date.parse(iso.includes("T") || iso.endsWith("Z") ? iso : iso.replace(" ", "T") + "Z");
+  return new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: TZ })
+    .format(new Date(t)).replace(",", "");
+}
+
 /** Wochen von heute bis zu einem Datum, aufgerundet */
 export function weeksUntil(date: string): number {
   const ms = Date.parse(date + "T12:00:00Z") - Date.parse(todayIso() + "T12:00:00Z");
