@@ -31,7 +31,7 @@ export interface Session {
   activity_id?: string | null;
 }
 export interface SyncState { source: string; last_ok: string | null; last_message: string | null; last_ok_flag: number | null }
-export interface Activity { id: string; source: string; sport: string; name: string | null; start_time: string; duration_s: number | null; distance_m: number | null; avg_hr: number | null }
+export interface Activity { id: string; source: string; sport: string; name: string | null; start_time: string; duration_s: number | null; distance_m: number | null; avg_hr: number | null; zone_seconds_json?: string | null }
 export interface Race { id: number; name: string; date: string | null; date_label: string | null; distance_km: number; target_seconds: number | null; pb_seconds: number | null }
 
 export interface TodayData { date: string; metrics: Metrics | null; sessions: Session[]; sync: SyncState[] }

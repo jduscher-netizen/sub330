@@ -178,6 +178,7 @@ Regeln:
   - UI: Profil › Garmin verbinden (Code-Eingabe, wartet auf das Ergebnis) und Sync-Protokoll
   - Tests ohne Netz: `cd sync && python -m unittest`
 - Inbetriebnahme: in GitHub Actions "Garmin-Login" starten, Code in der App unter Profil eintippen.
+- Plan-Screen hat oben eine Wochenbilanz: Lauf-km erledigt von geplant, Einheiten erledigt, harte Tage, Anteil locker (80/20 aus Garmin-Zonenzeiten, sonst aus geplanten Minuten) und Zähler je Sportart. "Erledigt" nutzt bis zum Matching (Schritt 5) auch die Anzahl der Garmin-Aktivitäten je Sportart.
 - Nächster Schritt 3: Heute-Screen mit echten Daten prüfen und verfeinern.
 
 ## Arbeitsweise

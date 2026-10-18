@@ -92,7 +92,22 @@ a { color: inherit; }
 .week-nav { display: flex; align-items: center; gap: 4px; }
 .icon-btn { width: 44px; height: 44px; border: none; background: transparent; color: var(--text); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 10px; }
 .box { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; background: var(--asphalt-raised); border-radius: 10px; }
-.split { display: flex; height: 6px; border-radius: 3px; overflow: hidden; background: var(--line); }
+.split { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: var(--line); }
+.week-sum { margin-top: 18px; gap: 12px; padding: 16px; border: 1px solid var(--line); }
+.sum-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 14px; }
+.sum-label { font-weight: 600; }
+.sum-num { font-family: var(--display); font-weight: 800; font-size: 26px; line-height: 1; }
+.meter { height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; }
+.meter > div { height: 100%; background: var(--accent); border-radius: 4px; }
+.sum-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+.sum-stats div { display: flex; flex-direction: column; gap: 4px; }
+.sum-stats span:not(.muted) { font-size: 12px; color: var(--text-muted); }
+.split-wrap { position: relative; display: flex; flex-direction: column; gap: 6px; }
+.split-target { position: absolute; top: -3px; width: 2px; height: 14px; margin-left: -1px; background: var(--bib); border-radius: 1px; }
+.split-legend { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); }
+.sum-cats { display: flex; flex-wrap: wrap; gap: 8px 16px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 13px; color: var(--text-muted); }
+.sum-cat { display: inline-flex; align-items: center; gap: 6px; }
+.sum-cat b { color: var(--text); font-weight: 600; }
 .days { list-style: none; margin: 18px 0 0; padding: 0; }
 .day { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--line); }
 .day.today { background: var(--asphalt-raised); border-radius: 10px; margin: 0 -12px; padding: 14px 12px; }

@@ -10,7 +10,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     env.DB.prepare("SELECT * FROM planned_sessions WHERE date BETWEEN ? AND ? ORDER BY date, sort, id")
       .bind(start, end).all(),
     env.DB.prepare(
-      "SELECT id, source, sport, name, start_time, duration_s, distance_m, avg_hr FROM activities WHERE substr(start_time, 1, 10) BETWEEN ? AND ? ORDER BY start_time",
+      "SELECT id, source, sport, name, start_time, duration_s, distance_m, avg_hr, zone_seconds_json FROM activities WHERE substr(start_time, 1, 10) BETWEEN ? AND ? ORDER BY start_time",
     ).bind(start, end).all(),
   ]);
 

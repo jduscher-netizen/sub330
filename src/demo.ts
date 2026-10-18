@@ -39,25 +39,25 @@ export function demoToday(): TodayData {
 export function demoWeek(start?: string): WeekData {
   const mo = mondayOf(start ?? todayIso());
   const d = (i: number) => addDays(mo, i);
-  const s = (id: number, i: number, type: string, title: string, zone: Session["zone"], hard = 0, status = "geplant"): Session =>
-    ({ id, date: d(i), type, title, zone, duration_min: null, distance_km: null, hard, status, notes: null });
+  const s = (id: number, i: number, type: string, title: string, zone: Session["zone"], hard = 0, status = "geplant", min: number | null = null, km: number | null = null): Session =>
+    ({ id, date: d(i), type, title, zone, duration_min: min, distance_km: km, hard, status, notes: null, activity_id: id === 1 ? "garmin:1" : null });
   return {
     start: mo, end: d(6),
     sessions: [
-      s(1, 0, "easy", "Lockerer Lauf, 40 min Z2", "Z2", 0, "erledigt"),
-      s(2, 0, "gym_upper", "Gym Oberkörper", null, 0, "erledigt"),
-      s(3, 1, "intervals", "VO2max-Intervalle, 5 × 3 min", "Z5", 1),
-      s(4, 1, "gym_legs", "Gym Beine, abends", null, 1),
-      s(5, 2, "bike", "Rad auf der Rolle, 60 min Z2", "Z2"),
-      s(6, 2, "swim", "Schwimmen, Kraultechnik", "Z1"),
-      s(7, 3, "threshold", "Schwelle, 3 × 10 min Z4", "Z4", 1),
-      s(8, 3, "padel", "Padel, abends", "Z3", 1),
-      s(9, 4, "gym_full", "Gym Ganzkörper", null),
-      s(10, 5, "swim", "Schwimmen, Kraultechnik", "Z1"),
-      s(11, 6, "long", "Long Run, 20 km Z2", "Z2", 1),
+      s(1, 0, "easy", "Lockerer Lauf, 40 min Z2", "Z2", 0, "erledigt", 45, 8),
+      s(2, 0, "gym_upper", "Gym Oberkörper", null, 0, "erledigt", 50),
+      s(3, 1, "intervals", "VO2max-Intervalle, 5 × 3 min", "Z5", 1, "geplant", 60, 11),
+      s(4, 1, "gym_legs", "Gym Beine, abends", null, 1, "geplant", 50),
+      s(5, 2, "bike", "Rad auf der Rolle, 60 min Z2", "Z2", 0, "geplant", 60),
+      s(6, 2, "swim", "Schwimmen, Kraultechnik", "Z1", 0, "geplant", 40),
+      s(7, 3, "threshold", "Schwelle, 3 × 10 min Z4", "Z4", 1, "geplant", 65, 13),
+      s(8, 3, "padel", "Padel, abends", "Z3", 1, "geplant", 90),
+      s(9, 4, "gym_full", "Gym Ganzkörper", null, 0, "geplant", 50),
+      s(10, 5, "swim", "Schwimmen, Kraultechnik", "Z1", 0, "geplant", 40),
+      s(11, 6, "long", "Long Run, 20 km Z2", "Z2", 1, "geplant", 120, 20),
     ],
     activities: [
-      { id: "garmin:1", source: "garmin", sport: "run", name: "Lockerer Lauf", start_time: d(0) + "T17:40:00", duration_s: 2790, distance_m: 8200, avg_hr: 144 },
+      { id: "garmin:1", source: "garmin", sport: "run", name: "Lockerer Lauf", start_time: d(0) + "T17:40:00", duration_s: 2790, distance_m: 8200, avg_hr: 144, zone_seconds_json: "[420,2190,180,0,0]" },
     ],
   };
 }

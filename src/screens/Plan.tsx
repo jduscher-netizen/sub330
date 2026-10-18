@@ -74,6 +74,8 @@ function Week({ data }: { data: WeekData }) {
   }
 
   return (
+    <>
+    <WeekSummary data={data} />
     <ol className="days" aria-label="Tage der Woche">
       {days.map((d) => {
         const items = data.sessions.filter((s) => s.date === d);
@@ -92,6 +94,106 @@ function Week({ data }: { data: WeekData }) {
         );
       })}
     </ol>
+    </>
+  );
+}
+
+// Kategorien für die Wochenbilanz: Einheiten-Typ → Garmin-Sportart
+const CATEGORIES = [
+  { key: "run", label: "Laufen", types: ["intervals", "threshold", "long", "easy", "run"], sport: "run", color: "var(--bib)" },
+  { key: "gym", label: "Gym", types: ["gym_legs", "gym_upper", "gym_full"], sport: "strength", color: "var(--gym)" },
+  { key: "swim", label: "Schwimmen", types: ["swim"], sport: "swim", color: "var(--z1)" },
+  { key: "bike", label: "Rad", types: ["bike"], sport: "bike", color: "var(--z2)" },
+  { key: "padel", label: "Padel", types: ["padel"], sport: "padel", color: "var(--z3)" },
+] as const;
+
+const km = (v: number) => (Math.round(v * 10) / 10).toLocaleString("de-DE", { maximumFractionDigits: 1 });
+
+function parseZones(json?: string | null): number[] | null {
+  if (!json) return null;
+  try {
+    const z = JSON.parse(json);
+    return Array.isArray(z) && z.length === 5 ? z.map(Number) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Bilanz der Woche: Laufumfang, erledigte Einheiten, harte Tage, Sportarten und 80/20. */
+function WeekSummary({ data }: { data: WeekData }) {
+  const sessions = data.sessions.filter((s) => s.type !== "rest");
+  const acts = data.activities;
+
+  // Erledigt: Status der Einheit oder (bis zum Matching in Schritt 5) passende Garmin-Aktivitäten
+  const cats = CATEGORIES.map((c) => {
+    const planned = sessions.filter((s) => (c.types as readonly string[]).includes(s.type));
+    const marked = planned.filter((s) => s.status === "erledigt").length;
+    const fromGarmin = acts.filter((a) => a.sport === c.sport).length;
+    return { ...c, planned: planned.length, done: Math.min(planned.length, Math.max(marked, fromGarmin)) };
+  });
+  const other = sessions.filter((s) => !CATEGORIES.some((c) => (c.types as readonly string[]).includes(s.type)));
+  const total = sessions.length;
+  const done = cats.reduce((a, c) => a + c.done, 0) + other.filter((s) => s.status === "erledigt").length;
+  const hardDays = new Set(sessions.filter((s) => s.hard === 1).map((s) => s.date)).size;
+
+  const runTypes = CATEGORIES[0].types as readonly string[];
+  const plannedKm = sessions.filter((s) => runTypes.includes(s.type)).reduce((a, s) => a + (s.distance_km ?? 0), 0);
+  const doneKm = acts.filter((a) => a.sport === "run").reduce((a, x) => a + (x.distance_m ?? 0) / 1000, 0);
+
+  // 80/20: absolvierte Zonenzeiten, solange es keine gibt die geplanten Minuten
+  const zoneSum = acts.map((a) => parseZones(a.zone_seconds_json)).filter((z): z is number[] => !!z)
+    .reduce((a, z) => a.map((v, i) => v + z[i]), [0, 0, 0, 0, 0]);
+  let easy = zoneSum[0] + zoneSum[1];
+  let hard = zoneSum[2] + zoneSum[3] + zoneSum[4];
+  let source = "absolviert";
+  if (easy + hard === 0) {
+    source = "geplant";
+    for (const s of sessions) {
+      if (!s.zone || !s.duration_min || s.type.startsWith("gym")) continue;
+      if (s.zone === "Z1" || s.zone === "Z2") easy += s.duration_min; else hard += s.duration_min;
+    }
+  }
+  const easyPct = easy + hard > 0 ? Math.round((easy / (easy + hard)) * 100) : null;
+
+  return (
+    <section className="box week-sum" aria-label="Wochenbilanz">
+      <div className="sum-row">
+        <span className="sum-label">Laufen</span>
+        <span><b className="sum-num">{km(doneKm)}</b><span className="muted"> von {km(plannedKm)} km</span></span>
+      </div>
+      <div className="meter" role="img" aria-label={`${km(doneKm)} von ${km(plannedKm)} km gelaufen`}>
+        <div style={{ width: `${plannedKm > 0 ? Math.min(100, (doneKm / plannedKm) * 100) : 0}%` }} />
+      </div>
+
+      <div className="sum-stats">
+        <div><b className="sum-num">{done}<span className="muted">/{total}</span></b><span>Einheiten erledigt</span></div>
+        <div><b className="sum-num">{hardDays}</b><span>{hardDays === 1 ? "harter Tag" : "harte Tage"}</span></div>
+        <div>
+          <b className="sum-num">{easyPct == null ? "-" : easyPct}<span className="muted">{easyPct == null ? "" : " %"}</span></b>
+          <span>locker, {source}</span>
+        </div>
+      </div>
+
+      {easyPct != null && (
+        <div className="split-wrap" role="img" aria-label={`${easyPct} Prozent locker, ${100 - easyPct} Prozent intensiv, Ziel 80 zu 20`}>
+          <div className="split">
+            <div style={{ width: `${easyPct}%`, background: "var(--z2)" }} />
+            <div style={{ flex: 1, background: "var(--z4)" }} />
+          </div>
+          <div className="split-target" style={{ left: "80%" }} />
+          <div className="split-legend"><span>Z1 bis Z2 {easyPct} %</span><span>Ziel 80/20</span><span>Z3 bis Z5 {100 - easyPct} %</span></div>
+        </div>
+      )}
+
+      <div className="sum-cats">
+        {cats.filter((c) => c.planned > 0).map((c) => (
+          <span key={c.key} className="sum-cat">
+            <span className="swatch" style={{ background: c.color }} />
+            {c.label} <b>{c.done}/{c.planned}</b>
+          </span>
+        ))}
+      </div>
+    </section>
   );
 }
 
