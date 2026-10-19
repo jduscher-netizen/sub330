@@ -2,15 +2,16 @@ import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "rea
 import { api, isDemo, type SyncState } from "../api";
 import { ago } from "../format";
 
-export type Tab = "heute" | "plan" | "verlauf" | "profil";
+export type Tab = "heute" | "plan" | "gym" | "verlauf" | "profil";
 
 const ICONS: Record<Tab, ReactNode> = {
   heute: (<><rect x="5" y="3" width="14" height="18" rx="2" /><circle cx="8" cy="6.5" r="0.8" /><circle cx="16" cy="6.5" r="0.8" /><path d="M9 14h6" /></>),
   plan: (<><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4" /></>),
+  gym: (<><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11" /></>),
   verlauf: (<><path d="M3 17l5-6 4 4 8-9" /><path d="M3 21h18" /></>),
   profil: (<><circle cx="12" cy="8" r="4" /><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" /></>),
 };
-const LABELS: Record<Tab, string> = { heute: "Heute", plan: "Plan", verlauf: "Verlauf", profil: "Profil" };
+const LABELS: Record<Tab, string> = { heute: "Heute", plan: "Plan", gym: "Gym", verlauf: "Verlauf", profil: "Profil" };
 
 export function TabBar({ current }: { current: Tab }) {
   const keep = location.search;

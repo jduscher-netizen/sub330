@@ -4,7 +4,7 @@ import { Bib } from "../components/Bib";
 import { Loading, Problem, SyncPill } from "../components/ui";
 import { longDate, weeksUntil } from "../format";
 import { sessionColor, shoeFor, ZONE_HEIGHT, ZONES } from "../zones";
-import { FlexRow } from "../components/FlexRow";
+import { FlexTiles } from "../components/FlexTiles";
 import { activityFacts, flexProgress, isRun, sportInfo, todayAdvice } from "../training";
 
 const HM_DATE = "2027-05-23";
@@ -104,7 +104,7 @@ export function Today() {
         <section className="section" aria-label="Diese Woche frei einteilen">
           <h2>Diese Woche frei einteilen</h2>
           {main && <p className="sub" style={{ margin: 0 }}>{advice.text}</p>}
-          <div>{flex.map((f) => <FlexRow key={f.key} f={f} />)}</div>
+          <FlexTiles items={flex} />
         </section>
       )}
 

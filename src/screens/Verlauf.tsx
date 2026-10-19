@@ -1,21 +1,22 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { api, isDemo, type OverviewData, type Result } from "../api";
 import { Loading, Problem } from "../components/ui";
 import { hms } from "../format";
 
 export function Verlauf() {
   const [res, setRes] = useState<Result<OverviewData> | null>(null);
-  useEffect(() => { api.overview().then(setRes); }, []);
+  const load = () => api.overview().then(setRes);
+  useEffect(() => { load(); }, []);
 
   return (
     <div className="screen">
       <header><h1 className="title-display">Verlauf</h1></header>
-      {!res ? <Loading /> : !res.ok ? <Problem status={res.status} message={res.message} /> : <Content data={res.data} />}
+      {!res ? <Loading /> : !res.ok ? <Problem status={res.status} message={res.message} /> : <Content data={res.data} reload={load} />}
     </div>
   );
 }
 
-function Content({ data }: { data: OverviewData }) {
+function Content({ data, reload }: { data: OverviewData; reload: () => void }) {
   const vo2 = data.history.filter((h) => h.vo2max != null) as { date: string; vo2max: number }[];
   const latest = [...data.history].reverse();
   const pick = <K extends "resting_hr" | "hrv_last_night" | "weight_kg">(k: K) => latest.find((h) => h[k] != null)?.[k] ?? null;
@@ -47,6 +48,7 @@ function Content({ data }: { data: OverviewData }) {
           <div><span>Ruhepuls</span><b className="val">{fmt(pick("resting_hr"))}</b><span>bpm</span></div>
           <div><span>HRV</span><b className="val">{fmt(pick("hrv_last_night"))}</b><span>ms, letzte Nacht</span></div>
         </div>
+        <WeightInput onSaved={reload} />
       </section>
     </>
   );
@@ -79,5 +81,35 @@ function Vo2Chart({ points }: { points: { date: string; vo2max: number }[] }) {
         <circle cx={x(points.length - 1)} cy={y(last.vo2max)} r="4.5" fill="var(--bib)" />
       </svg>
     </>
+  );
+}
+
+/** Gewicht von Hand eintragen, für Waagen ohne Garmin-Anbindung */
+function WeightInput({ onSaved }: { onSaved: () => void }) {
+  const [kg, setKg] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    const r = await api.saveWeight(kg);
+    setBusy(false);
+    if (!r.ok) return setMsg({ ok: false, text: r.message ?? "Nicht gespeichert." });
+    setMsg({ ok: true, text: `${kg.replace(".", ",")} kg für heute gespeichert.` });
+    setKg("");
+    onSaved();
+  }
+
+  return (
+    <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 8 }} aria-label="Gewicht eintragen">
+      <div style={{ display: "flex", gap: 10 }}>
+        <label htmlFor="weight-kg" className="sr-only">Gewicht heute in kg</label>
+        <input id="weight-kg" className="input" style={{ flex: 1 }} inputMode="decimal" placeholder="Gewicht heute, z. B. 84,6"
+          value={kg} onChange={(e) => setKg(e.target.value.replace(/[^\d,.]/g, ""))} />
+        <button type="submit" className="btn btn-primary" style={{ flex: "0 0 auto" }} disabled={busy || !kg}>Speichern</button>
+      </div>
+      {msg && <span role={msg.ok ? "status" : "alert"} style={{ fontSize: 13, color: msg.ok ? "var(--z2)" : "var(--z5)" }}>{msg.text}</span>}
+    </form>
   );
 }

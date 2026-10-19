@@ -152,7 +152,7 @@ Regeln:
 - Zonenfarben nur für Zonen und Einheiten-Typen, nie als Deko; für Aktionen und Hervorhebung nur accent
 - Inhalte als Zeilen mit Trennlinien, keine Karten-Raster
 - Touch-Ziele mindestens 44 px, mobil zuerst (390 px Breite)
-- Navigation unten: Heute, Plan, Verlauf, Profil
+- Navigation unten: Heute, Plan, Gym, Verlauf, Profil (Leiste 56 px plus Safe Area, seit 19.10.2026 flacher)
 
 ## Umsetzungsreihenfolge
 
@@ -183,8 +183,11 @@ Regeln:
   - Laufen fest nach Tagen ab 26.10.2026 (Woche 1 von 30): Di Schwelle bzw. HM-Tempo, Do Intervalle (seit Migration 0005, Wunsch von Jan), Fr locker (nicht in Entlastungswochen), So Long Run. Wochen 1 und 2 nur locker nach dem Marathon, Entlastung in Woche 6, 9, 14, 18, 23, Testlauf 10 km in Woche 24, Rennen 23.05.2027.
   - Alles andere nur als Wochenziel ab 19.10.2026 in `week_targets` (gym, swim, padel, bike mit min/max): Jan entscheidet täglich, gezählt wird über die Garmin-Aktivitäten der Woche.
   - Plan ändern: Generator anpassen und als neue Migration ausgeben (die alte Migration nicht ändern, sie ist schon angewendet).
-- Plan-Screen: Wochenbilanz (Lauf-km, Läufe erledigt, harte Tage, 80/20, Wochenziele als Punkte) und pro Tag alle Garmin-Aktivitäten. Läufe werden in der Anzeige dem geplanten Lauf am selben Tag zugeordnet (vorläufig, das echte Matching ist Schritt 5).
+- Vorwoche 19. bis 25.10.: drei lockere Läufe (Di 30, Do 35, So 45 min), Migration 0006 aus `generate_plan.py --week0`.
+- Plan-Screen: Wochenbilanz (Lauf-km, Läufe erledigt, harte Tage, 80/20, Wochenziele als Kacheln mit Ring, `src/components/FlexTiles.tsx`; Antippen zeigt die erledigten Tage) und pro Tag alle Garmin-Aktivitäten. Läufe werden in der Anzeige dem geplanten Lauf am selben Tag zugeordnet (vorläufig, das echte Matching ist Schritt 5).
 - Heute-Screen: "Schon erledigt" (Aktivitäten von heute), Wochenziele und ein Hinweis, was heute passt (Regeln: nie zwei harte Tage hintereinander, kein Bein-Gym vor Intervallen oder Long Run), in `src/training.ts`.
+- Gym-Tab: Trainingstagebuch (`gym_entries`, Migration 0007): Übung, Sätze, Wdh., Gewicht pro Tag. Bekannte Übungen schlagen die letzten Werte vor, Chips für Übungen vom letzten Mal, Antippen eines Eintrags zum Ändern oder Löschen. API `GET/POST /api/gym`, `PUT/DELETE /api/gym/:id`.
+- Gewicht: Jans Waage ist nicht mit Garmin verbunden, deshalb Eingabe im Verlauf (`POST /api/weight`, schreibt `daily_metrics.weight_kg`). Der Heute-Screen ignoriert Zeilen, die nur ein Gewicht haben.
 - Historie wird nicht nachgeladen, die App sammelt ab dem ersten Sync (Wunsch von Jan). Falls doch nötig: "Garmin-Sync" manuell mit Eingabe `days` (maximal 120).
 - Nächster Schritt 3: Heute-Screen mit echten Daten prüfen und verfeinern.
 

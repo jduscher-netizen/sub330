@@ -1,4 +1,4 @@
-import type { Activity, GarminStatus, OverviewData, Session, TodayData, WeekData, WeekTarget } from "./api";
+import type { Activity, GarminStatus, GymData, OverviewData, Session, TodayData, WeekData, WeekTarget } from "./api";
 import { addDays, mondayOf, todayIso } from "./format";
 
 // Beispieldaten für die Ansicht mit ?demo, solange noch keine echten Daten da sind.
@@ -106,6 +106,29 @@ export function demoGarmin(): GarminStatus {
       { started_at: at(8), finished_at: at(8), ok: 1, message: "2 Tage Gesundheitswerte, 1 Aktivität" },
       { started_at: at(68), finished_at: at(68), ok: 1, message: "2 Tage Gesundheitswerte, 1 Aktivität" },
       { started_at: at(128), finished_at: at(128), ok: 0, message: "Teilweise fehlgeschlagen (2 Tage Gesundheitswerte, 1 Aktivität). HRV 2026-10-18: 503" },
+    ],
+  };
+}
+
+export function demoGym(date?: string): GymData {
+  const d = date ?? todayIso();
+  const e = (id: number, exercise: string, sets: number, reps: number, weight_kg: number | null) => ({ id, date: d, exercise, sets, reps, weight_kg, note: null });
+  const isToday = d === todayIso();
+  return {
+    date: d,
+    entries: isToday ? [e(1, "Kniebeuge", 4, 8, 80), e(2, "Rumänisches Kreuzheben", 3, 10, 70), e(3, "Ausfallschritte", 3, 12, 20)] : [],
+    exercises: [
+      { exercise: "Bankdrücken", date: addDays(d, -2), sets: 4, reps: 8, weight_kg: 72.5 },
+      { exercise: "Klimmzüge", date: addDays(d, -2), sets: 4, reps: 6, weight_kg: null },
+      { exercise: "Kniebeuge", date: addDays(d, -5), sets: 4, reps: 8, weight_kg: 77.5 },
+      { exercise: "Rumänisches Kreuzheben", date: addDays(d, -5), sets: 3, reps: 10, weight_kg: 67.5 },
+      { exercise: "Ausfallschritte", date: addDays(d, -5), sets: 3, reps: 12, weight_kg: 20 },
+      { exercise: "Rudern am Kabel", date: addDays(d, -2), sets: 3, reps: 12, weight_kg: 55 },
+    ],
+    days: [
+      ...(isToday ? [{ date: d, exercises: 3, sets: 10, volume: 5380 }] : []),
+      { date: addDays(d, -2), exercises: 4, sets: 15, volume: 6120 },
+      { date: addDays(d, -5), exercises: 5, sets: 16, volume: 7250 },
     ],
   };
 }

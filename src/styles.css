@@ -21,7 +21,7 @@
   --ghost-line: #3a4f6e;
   --display: "Big Shoulders Display", "Oswald", Impact, sans-serif;
   --ui: "Archivo", system-ui, sans-serif;
-  --tabbar-h: 76px;
+  --tabbar-h: 56px;
   color-scheme: dark;
 }
 
@@ -38,7 +38,7 @@ a { color: inherit; }
 .head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
 .head h1 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
 .sub { margin: 4px 0 0; font-size: 13px; color: var(--text-muted); }
-.title-display { margin: 0; font-family: var(--display); font-weight: 800; font-size: 36px; line-height: 1; }
+.title-display, .head h1.title-display { margin: 0; font-family: var(--display); font-weight: 800; font-size: 36px; line-height: 1; letter-spacing: 0; }
 
 .sync-pill { display: flex; align-items: center; gap: 7px; min-height: 44px; font-size: 12px; font-family: inherit; color: var(--text-muted); padding: 0 12px; border: 1px solid var(--ghost-line); background: var(--asphalt-raised); border-radius: 999px; white-space: nowrap; cursor: pointer; }
 .sync-pill svg { color: var(--accent); }
@@ -107,15 +107,20 @@ a { color: inherit; }
 .split-wrap { position: relative; display: flex; flex-direction: column; gap: 6px; }
 .split-target { position: absolute; top: -3px; width: 2px; height: 14px; margin-left: -1px; background: var(--bib); border-radius: 1px; }
 .split-legend { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); }
+.ftiles-wrap { display: flex; flex-direction: column; gap: 10px; }
+.ftiles { display: grid; gap: 6px; }
+.ftile { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 2px 10px; min-height: 44px; border: 1px solid transparent; border-radius: 12px; background: transparent; color: var(--text); font-family: inherit; cursor: pointer; }
+.ftile.open { border-color: var(--ghost-line); background: var(--asphalt-deep); }
+.ftile.off { opacity: 0.45; }
+.ftile-label { font-size: 13px; font-weight: 600; margin-top: 2px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ftile-goal { font-size: 11px; color: var(--text-muted); }
+.ring-num { font-family: var(--display); font-weight: 800; font-size: 22px; fill: var(--text); }
+.ftile-detail { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 10px; background: var(--asphalt-deep); font-size: 13px; }
+.ftile-act { display: flex; gap: 10px; align-items: baseline; }
+.ftile-day { flex: 0 0 52px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.ftile-note { font-size: 12px; color: var(--text-faint); }
 .flex-list { display: flex; flex-direction: column; padding-top: 10px; border-top: 1px solid var(--line); }
 .flex-head { font-size: 12px; color: var(--text-muted); padding-bottom: 4px; }
-.flex-row { display: flex; align-items: center; gap: 10px; min-height: 36px; font-size: 14px; }
-.flex-label { flex: 0 0 84px; }
-.flex-dots { flex: 1 1 auto; display: flex; gap: 6px; }
-.fdot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--text-muted); }
-.fdot.opt { border-style: dashed; border-color: var(--text-faint); }
-.flex-count { font-size: 13px; white-space: nowrap; }
-.flex-count.reached { color: var(--z2); }
 .sum-cats { display: flex; flex-wrap: wrap; gap: 8px 16px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 13px; color: var(--text-muted); }
 .sum-cat { display: inline-flex; align-items: center; gap: 6px; }
 .sum-cat b { color: var(--text); font-weight: 600; }
@@ -153,6 +158,19 @@ a { color: inherit; }
 .btn-accent-ghost:disabled { opacity: 1; cursor: default; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* Gym-Tagebuch */
+.gym-form { gap: 12px; }
+.field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--text-muted); min-width: 0; }
+.gym-nums { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.input.num { font-family: var(--display); font-weight: 800; font-size: 22px; text-align: center; padding: 0 6px; }
+.input.num::placeholder { font-family: var(--ui); font-weight: 400; font-size: 12px; }
+.gym-last { margin: 0; font-size: 13px; color: var(--text-muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { min-height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--ghost-line); background: var(--asphalt-raised); color: var(--text); font-family: inherit; font-size: 13px; cursor: pointer; }
+.gym-row { width: 100%; background: none; border-left: none; border-right: none; border-top: none; color: var(--text); font-family: inherit; text-align: left; cursor: pointer; min-height: 48px; }
+.gym-row.editing, .gym-row[aria-current="date"] { color: var(--accent); }
+.gym-scheme { font-size: 14px; color: var(--text-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+
 /* Formulare */
 .input { height: 48px; border-radius: 10px; border: 1px solid var(--ghost-line); background: var(--asphalt-deep); color: var(--text); padding: 0 14px; font-size: 16px; font-family: inherit; min-width: 0; }
 .code-input { flex: 1 1 0; font-family: var(--display); font-weight: 800; font-size: 24px; letter-spacing: 0.12em; }
@@ -162,8 +180,8 @@ a { color: inherit; }
 .log-time { flex: 0 0 auto; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 
 /* Navigation unten */
-.tabbar { position: fixed; left: 0; right: 0; bottom: 0; height: calc(var(--tabbar-h) + env(safe-area-inset-bottom)); padding-bottom: calc(8px + env(safe-area-inset-bottom)); background: var(--asphalt-deep); border-top: 1px solid var(--line); display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); max-width: 480px; margin: 0 auto; }
-.tab { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: var(--text-faint); text-decoration: none; font-size: 12px; font-weight: 500; background: none; border: none; cursor: pointer; }
+.tabbar { position: fixed; left: 0; right: 0; bottom: 0; height: calc(var(--tabbar-h) + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); background: var(--asphalt-deep); border-top: 1px solid var(--line); display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); max-width: 480px; margin: 0 auto; }
+.tab { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: var(--text-faint); text-decoration: none; font-size: 12px; font-weight: 500; background: none; border: none; cursor: pointer; }
 .tab[aria-current="page"] { color: var(--accent); font-weight: 700; }
 
 @media (prefers-reduced-motion: no-preference) {

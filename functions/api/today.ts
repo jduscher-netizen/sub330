@@ -7,7 +7,10 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
 
   const monday = mondayOf(date);
   const [metrics, sessions, around, weekActs, targets, sync] = await Promise.all([
-    env.DB.prepare("SELECT * FROM daily_metrics WHERE date <= ? ORDER BY date DESC LIMIT 1").bind(date).first(),
+    // Zeilen nur mit Gewicht (von Hand eingetragen) zählen nicht als Tageswerte von Garmin
+    env.DB.prepare(
+      "SELECT * FROM daily_metrics WHERE date <= ? AND (readiness_score IS NOT NULL OR resting_hr IS NOT NULL OR hrv_last_night IS NOT NULL) ORDER BY date DESC LIMIT 1",
+    ).bind(date).first(),
     env.DB.prepare("SELECT * FROM planned_sessions WHERE date = ? ORDER BY sort, id").bind(date).all(),
     // Gestern und morgen, für die Hinweise zu harten Tagen
     env.DB.prepare("SELECT date, type, title, hard FROM planned_sessions WHERE date IN (?, ?) ORDER BY date, sort, id")

@@ -101,6 +101,13 @@ def race() -> dict:
                 distance=21.1)
 
 
+# Vorwoche (19. bis 25.10.2026): drei lockere Läufe zum Wiedereinstieg (Wunsch von Jan, 19.10.2026)
+WEEK0_RUNS = [
+    (1, easy(30, "Erster Lauf nach dem Marathon: ganz locker, gerne kürzer, wenn die Beine schwer sind.")),
+    (3, easy(35)),
+    (6, easy(45)),
+]
+
 # Wochen 1 bis 30: (Phase, Intervall-Tag, Schwellen-Tag, Fr oder None, So, Notiz zur Woche)
 # Tage: Schwelle bzw. HM-Tempo am Dienstag, Intervalle am Donnerstag (Wunsch von Jan, 18.10.2026)
 THRESHOLD_DAY, INTERVAL_DAY = 1, 3
@@ -146,7 +153,7 @@ def week_targets(week_no: int, phase: str | None, note: str | None) -> list[tupl
     """Wochenziele für Gym, Schwimmen, Padel, Rad: (Kategorie, min, max, Hinweis)."""
     deload = note and "Entlastung" in note
     if week_no == 0:
-        return [("gym", 3, 4, "Laufpause nach dem Marathon: Gym und Schwimmen dürfen den Ton angeben."),
+        return [("gym", 3, 4, "Vorwoche mit drei lockeren Läufen: Gym und Schwimmen dürfen den Ton angeben."),
                 ("swim", 1, 2, "Kraultechnik"), ("padel", 1, 1, None), ("bike", 0, 2, "Statt Laufen, nur Z2")]
     if week_no == 30:
         return [("gym", 1, 2, "Rennwoche: keine schweren Beine"), ("swim", 0, 1, "Nur locker"),
@@ -166,13 +173,41 @@ def q(v) -> str:
     return "'" + str(v).replace("'", "''") + "'"
 
 
+def session_row(d: date, s: dict) -> str:
+    blocks = s["blocks"]
+    minutes = round(sum(m for m, _ in blocks))
+    structure = json.dumps([{"min": m, "zone": z} for m, z in blocks])
+    dist = s.get("distance") or km(blocks)
+    return (f"({q(d.isoformat())}, 0, {q(s['type'])}, {q(s['title'])}, {q(s['zone'])}, {minutes}, {dist}, "
+            f"{s['hard']}, {s['priority']}, 'geplant', {q(structure)}, {q(s['notes'])})")
+
+
+INSERT_SESSIONS = ("INSERT INTO planned_sessions (date, sort, type, title, zone, duration_min, distance_km, hard, priority, "
+                   "status, structure_json, notes) VALUES\n  ")
+
+
+def week0_rows() -> list[str]:
+    return [session_row(FLEX_START + timedelta(days=off), s) for off, s in WEEK0_RUNS]
+
+
+def main_week0() -> None:
+    """Nur die Vorwoche: python plan/generate_plan.py --week0 (Migration 0006)"""
+    gym_note = week_targets(0, None, None)[0][3]
+    print("\n\n".join([
+        "-- Vorwoche 19. bis 25.10.2026: drei lockere Läufe, erzeugt mit plan/generate_plan.py --week0",
+        "DELETE FROM planned_sessions WHERE date BETWEEN '2026-10-19' AND '2026-10-25';",
+        INSERT_SESSIONS + ",\n  ".join(week0_rows()) + ";",
+        f"UPDATE week_targets SET note = {q(gym_note)} WHERE week_start = '2026-10-19' AND category = 'gym';",
+    ]))
+
+
 def main() -> None:
     out = ["-- Plan bis zum WVV Halbmarathon 23.05.2027, erzeugt mit plan/generate_plan.py (Schwelle Di, Intervalle Do)",
            "DELETE FROM planned_sessions WHERE date BETWEEN '2026-10-19' AND '2027-05-23';",
            "DELETE FROM week_targets WHERE week_start BETWEEN '2026-10-19' AND '2027-05-23';"]
     assert RUN_START + timedelta(weeks=len(WEEKS) - 1, days=6) == RACE, "Woche 30 muss mit dem Renntag enden"
 
-    rows = []
+    rows = week0_rows()
     for i, (phase, quality_a, quality_b, fri, sun, note) in enumerate(WEEKS):
         monday = RUN_START + timedelta(weeks=i)
         sat_easy = easy(20, strides=True) if i == len(WEEKS) - 1 else None
@@ -180,15 +215,8 @@ def main() -> None:
         for offset, s in ((INTERVAL_DAY, quality_a), (THRESHOLD_DAY, quality_b), (4, fri), (5, sat_easy), (6, sun)):
             if not s:
                 continue
-            d = monday + timedelta(days=offset)
-            blocks = s["blocks"]
-            minutes = round(sum(m for m, _ in blocks))
-            structure = json.dumps([{"min": m, "zone": z} for m, z in blocks])
-            dist = s.get("distance") or km(blocks)
-            rows.append(f"({q(d.isoformat())}, 0, {q(s['type'])}, {q(s['title'])}, {q(s['zone'])}, {minutes}, {dist}, "
-                        f"{s['hard']}, {s['priority']}, 'geplant', {q(structure)}, {q(s['notes'])})")
-    out.append("INSERT INTO planned_sessions (date, sort, type, title, zone, duration_min, distance_km, hard, priority, "
-               "status, structure_json, notes) VALUES\n  " + ",\n  ".join(rows) + ";")
+            rows.append(session_row(monday + timedelta(days=offset), s))
+    out.append(INSERT_SESSIONS + ",\n  ".join(rows) + ";")
 
     trows = []
     for week_no in range(0, len(WEEKS) + 1):
@@ -202,4 +230,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    main_week0() if "--week0" in sys.argv else main()

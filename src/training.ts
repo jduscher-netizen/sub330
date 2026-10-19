@@ -54,14 +54,15 @@ export function matchRuns(sessions: Session[], acts: Activity[]): { matched: Map
   return { matched, rest: acts.filter((a) => !used.has(a.id)) };
 }
 
-export interface FlexProgress { key: string; label: string; color: string; done: number; min: number; max: number; note: string | null }
+export interface FlexProgress { key: string; label: string; color: string; done: number; min: number; max: number; note: string | null; acts: Activity[] }
 
 export function flexProgress(targets: WeekTarget[], acts: Activity[]): FlexProgress[] {
   return FLEX_ORDER.flatMap((key) => {
     const t = targets.find((x) => x.category === key);
     if (!t) return [];
     const f = FLEX[key];
-    return [{ key, label: f.label, color: f.color, done: acts.filter((a) => a.sport === f.sport).length, min: t.target_min, max: t.target_max, note: t.note }];
+    const mine = acts.filter((a) => a.sport === f.sport);
+    return [{ key, label: f.label, color: f.color, done: mine.length, min: t.target_min, max: t.target_max, note: t.note, acts: mine }];
   });
 }
 
@@ -90,4 +91,14 @@ export function todayAdvice(today: SessionLite[], yesterday: SessionLite[], tomo
   if (hardTomorrow) return { text: `${dayName("morgen")}: ${hardTomorrow.title}. Heute lieber kein Padel und keine schweren Beine. ${good}`, easyOnly: true };
   if (hardYesterday) return { text: `${dayName("gestern")} war hart (${hardYesterday.title}). Heute kein Padel und keine schweren Beine. ${good}`, easyOnly: true };
   return { text: "Heute passt alles, auch Padel oder Bein-Gym.", easyOnly: false };
+}
+
+/** Ziel erreicht? Optionale Ziele gelten erst mit einer Einheit als erledigt. */
+export const flexReached = (f: FlexProgress) => f.max > 0 && f.done > 0 && f.done >= f.min;
+
+/** Kurztext unter der Kachel: "von 3", "von 1 bis 2", "optional", "Pause" */
+export function flexGoal(f: FlexProgress): string {
+  if (f.max === 0) return "Pause";
+  if (f.min === 0) return "optional";
+  return f.min === f.max ? `von ${f.min}` : `von ${f.min} bis ${f.max}`;
 }

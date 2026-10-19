@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { api, isDemo, type Activity, type Result, type Session, type WeekData } from "../api";
-import { FlexRow } from "../components/FlexRow";
+import { FlexTiles } from "../components/FlexTiles";
 import { activityFacts, flexProgress, isRun, matchRuns, sportInfo } from "../training";
 import { Loading, Problem } from "../components/ui";
 import { addDays, dayOfMonth, mondayOf, shortWeekday, todayIso, weekRange } from "../format";
@@ -57,7 +57,7 @@ export function Plan() {
             </div>
           </div>
         ) : (
-          <p className="sub" style={{ margin: 0 }}>{wk < 1 ? "Laufpause nach dem Marathon. Die Läufe starten am 26. Oktober, Gym und Co. teilst du frei ein." : "Nach dem Halbmarathon, Planung für den Herbst folgt."}</p>
+          <p className="sub" style={{ margin: 0 }}>{wk === 0 ? "Vorwoche: drei lockere Läufe zum Wiedereinstieg. Woche 1 startet am 26. Oktober." : wk < 0 ? "Der Plan startet am 19. Oktober." : "Nach dem Halbmarathon, Planung für den Herbst folgt."}</p>
         )}
       </header>
 
@@ -185,7 +185,7 @@ function WeekSummary({ data, matched }: { data: WeekData; matched: Map<number, A
       {flex.length > 0 && (
         <div className="flex-list" aria-label="Wochenziele ohne festen Tag">
           <span className="flex-head">Frei einteilen</span>
-          {flex.map((f) => <FlexRow key={f.key} f={f} />)}
+          <FlexTiles items={flex} />
         </div>
       )}
     </section>

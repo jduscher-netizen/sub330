@@ -1,4 +1,4 @@
-import { demoGarmin, demoOverview, demoToday, demoWeek } from "./demo";
+import { demoGarmin, demoGym, demoOverview, demoToday, demoWeek } from "./demo";
 
 export type Zone = "Z1" | "Z2" | "Z3" | "Z4" | "Z5";
 
@@ -45,6 +45,12 @@ export interface OverviewData { races: Race[]; history: Partial<Metrics>[]; sync
 export interface SyncLogEntry { id?: number; started_at: string; finished_at: string | null; ok: number; message: string | null }
 export interface GarminStatus { connected: boolean; tokens_updated_at: string | null; login: SyncLogEntry | null; log: SyncLogEntry[] }
 
+export interface GymEntry { id: number; date: string; exercise: string; sets: number; reps: number; weight_kg: number | null; note: string | null }
+export interface GymLast { exercise: string; date: string; sets: number; reps: number; weight_kg: number | null }
+export interface GymDay { date: string; exercises: number; sets: number; volume: number }
+export interface GymData { date: string; entries: GymEntry[]; exercises: GymLast[]; days: GymDay[] }
+export type GymInput = Omit<GymEntry, "id" | "note"> & { note?: string | null };
+
 export type Result<T> = { ok: true; data: T } | { ok: false; status: number; message: string };
 
 export const isDemo = new URLSearchParams(location.search).has("demo");
@@ -61,10 +67,10 @@ async function get<T>(path: string, demo: () => T): Promise<Result<T>> {
   }
 }
 
-async function post(path: string, body?: unknown): Promise<{ ok: boolean; message?: string }> {
+async function post(path: string, body?: unknown, method = "POST"): Promise<{ ok: boolean; message?: string }> {
   try {
     const res = await fetch(path, {
-      method: "POST",
+      method,
       credentials: "include",
       headers: { "content-type": "application/json" },
       body: body ? JSON.stringify(body) : undefined,
@@ -84,5 +90,10 @@ export const api = {
   overview: () => get<OverviewData>("/api/overview", demoOverview),
   garmin: () => get<GarminStatus>("/api/garmin", demoGarmin),
   syncNow: () => (isDemo ? new Promise<{ ok: boolean; message?: string }>((r) => setTimeout(() => r({ ok: true }), 600)) : post("/api/garmin/sync")),
+  gym: (date?: string) => get<GymData>(`/api/gym${date ? `?date=${date}` : ""}`, () => demoGym(date)),
+  addGym: (e: GymInput) => (isDemo ? Promise.resolve({ ok: true, message: undefined }) : post("/api/gym", e)),
+  updateGym: (id: number, e: GymInput) => (isDemo ? Promise.resolve({ ok: true, message: undefined }) : post(`/api/gym/${id}`, e, "PUT")),
+  deleteGym: (id: number) => (isDemo ? Promise.resolve({ ok: true, message: undefined }) : post(`/api/gym/${id}`, undefined, "DELETE")),
+  saveWeight: (kg: string) => (isDemo ? Promise.resolve({ ok: true, message: undefined }) : post("/api/weight", { kg })),
   sendMfaCode: (code: string) => (isDemo ? Promise.resolve({ ok: true, message: undefined }) : post("/api/garmin/mfa", { code })),
 };
