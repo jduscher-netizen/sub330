@@ -168,11 +168,12 @@ Regeln:
 ## Stand (18.10.2026)
 
 - Schritt 1 erledigt: App live auf https://sub330.pages.dev (Beispieldaten: `/?demo`), D1 verbunden, Passwort-Login aktiv, Deploy per GitHub Actions bei jedem Push auf `main`.
-- GitHub-Secrets vorhanden: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `GARMIN_EMAIL`, `GARMIN_PASSWORD`, `APP_PASSWORD`.
-- Schritt 2 umgesetzt (Garmin-Sync), wartet auf den ersten echten Login:
+- GitHub-Secrets vorhanden: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `GARMIN_EMAIL`, `GARMIN_PASSWORD`, `APP_PASSWORD`, `GH_ACTIONS_TOKEN` (seit 19.10.2026, Sync-Knopf funktioniert).
+- Schritt 2 umgesetzt (Garmin-Sync), Garmin seit 18.10.2026 verbunden:
   - `sync/garmin_sync.py`: Trainingsbereitschaft inkl. Faktoren, HRV, Schlaf, Body Battery, Ruhepuls, Stress, akute Last, VO2max, Gewicht (heute und gestern) und Aktivitäten der letzten 3 Tage inkl. Zonenzeiten. Schreibt per D1-API (`sync/d1.py`, Datenbank-ID wird über den Namen `sub330` gesucht). Fehler einzelner Endpunkte brechen nicht ab, stehen aber in `sync_log`. Ohne gültige Tokens: "Garmin neu verbinden".
   - `sync/garmin_login.py`: Zwei-Faktor-Login, Fortschritt als `sync_log`-Eintrag mit `source = 'garmin_login'`
-  - Workflows `garmin-login.yml` (manuell, startet danach direkt einen Sync) und `garmin-sync.yml` (Cron 4 bis 21 UTC, Skript filtert auf 6 bis 22 Uhr Berlin). Beide in der Concurrency-Gruppe `garmin`.
+  - Workflows `garmin-login.yml` (manuell, startet danach direkt einen Sync) und `garmin-sync.yml` (nur `workflow_dispatch`). Beide in der Concurrency-Gruppe `garmin`.
+  - Stündlicher Anstoß: Cloudflare Worker `sub330-cron` (`cron/`, Cron 4 bis 21 UTC, filtert auf 6 bis 22 Uhr Berlin) startet `garmin-sync` über die GitHub-API wie der Sync-Knopf (gemeinsamer Code in `functions/_lib/github.ts`). Kann er nicht starten, schreibt er den Grund in `sync_log`. Grund: GitHub hat den eigenen Zeitplan nur sporadisch ausgeführt. Deploy-Schritt mit `continue-on-error`, damit die App trotzdem veröffentlicht wird.
   - API: `GET /api/garmin` (Verbindung, letzter Login, letzte 10 Sync-Läufe), `POST /api/garmin/mfa` (Code speichern), `POST /api/garmin/sync` (startet den Workflow garmin-sync über die GitHub-API, braucht `GH_ACTIONS_TOKEN`)
   - Sync-Knopf: Tipp auf die Sync-Pille im Heute-Kopf oder "Jetzt synchronisieren" im Profil; die App wartet auf den neuen Eintrag in `sync_log` und lädt dann neu
   - UI: Profil › Garmin verbinden (Code-Eingabe, wartet auf das Ergebnis) und Sync-Protokoll

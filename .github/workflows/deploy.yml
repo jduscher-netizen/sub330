@@ -37,7 +37,7 @@ jobs:
             ID="$(find_id)"
           fi
           echo "Datenbank-ID: $ID"
-          sed -i "s/^database_id = .*/database_id = \"$ID\"/" wrangler.toml
+          sed -i "s/^database_id = .*/database_id = \"$ID\"/" wrangler.toml cron/wrangler.toml
 
       - name: Datenbank-Migrationen anwenden
         run: npx wrangler d1 migrations apply sub330 --remote
@@ -70,3 +70,15 @@ jobs:
 
       - name: Veröffentlichen
         run: npx wrangler pages deploy dist --project-name sub330 --branch main --commit-dirty=true
+
+      # Eigener Schritt: ein Fehler hier darf das Veröffentlichen der App nicht verhindern
+      - name: Zeitplan für den Garmin-Sync (Worker sub330-cron)
+        continue-on-error: true
+        env:
+          GH_ACTIONS_TOKEN: ${{ secrets.GH_ACTIONS_TOKEN }}
+        run: |
+          set -euo pipefail
+          npx wrangler deploy --config cron/wrangler.toml
+          if [ -n "${GH_ACTIONS_TOKEN}" ]; then
+            printf '%s' "$GH_ACTIONS_TOKEN" | npx wrangler secret put GH_ACTIONS_TOKEN --config cron/wrangler.toml
+          fi

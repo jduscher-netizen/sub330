@@ -1,10 +1,8 @@
 name: Garmin-Sync
 
-# Stündlich von 6 bis 22 Uhr Ortszeit. GitHub rechnet in UTC, daher ein weiteres Fenster;
-# das Skript überspringt Läufe außerhalb von 6 bis 22 Uhr in Europe/Berlin.
+# Gestartet über workflow_dispatch: stündlich vom Cloudflare Worker sub330-cron (cron/),
+# per Sync-Knopf in der App oder von Hand. Der GitHub-Zeitplan war zu unzuverlässig.
 on:
-  schedule:
-    - cron: "7 4-21 * * *"
   workflow_dispatch:
     inputs:
       days:

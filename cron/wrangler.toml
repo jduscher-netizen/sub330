@@ -1,0 +1,16 @@
+# Worker nur für den stündlichen Garmin-Sync (kein öffentlicher Endpunkt)
+name = "sub330-cron"
+main = "index.ts"
+compatibility_date = "2026-10-01"
+workers_dev = false
+preview_urls = false
+
+[triggers]
+# UTC: deckt 6 bis 22 Uhr Berlin in Sommer- und Winterzeit ab, der Worker filtert genau
+crons = ["5 4-21 * * *"]
+
+# database_id wird beim Deployment automatisch eingesetzt (siehe .github/workflows/deploy.yml)
+[[d1_databases]]
+binding = "DB"
+database_name = "sub330"
+database_id = "00000000-0000-0000-0000-000000000000"

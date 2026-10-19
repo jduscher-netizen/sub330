@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -p tsconfig.json && tsc -p functions/tsconfig.json && vite build",
+    "build": "tsc -p tsconfig.json && tsc -p functions/tsconfig.json && tsc -p cron/tsconfig.json && vite build",
     "preview": "wrangler pages dev dist",
     "db:migrate:local": "wrangler d1 migrations apply sub330 --local",
     "db:migrate:remote": "wrangler d1 migrations apply sub330 --remote"
