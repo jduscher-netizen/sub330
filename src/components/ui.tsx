@@ -93,14 +93,17 @@ export function SyncPill({ sync, onDone }: { sync: SyncState[]; onDone?: () => v
     : !g ? "Garmin nicht verbunden"
     : ok ? `Garmin ${ago(g.last_ok)}` : "Garmin-Sync gestört";
   return (
-    <button
-      type="button" className={`sync-pill${busy ? " busy" : ""}`} onClick={start} disabled={busy}
-      aria-label={`${text}. Jetzt synchronisieren`} title={run.state === "error" ? run.message ?? undefined : "Jetzt synchronisieren"}
-    >
-      <span className="dot" style={{ background: color }} />
-      {text}
-      {SYNC_ICON_SMALL}
-    </button>
+    <div className="sync-wrap">
+      <button
+        type="button" className={`sync-pill${busy ? " busy" : ""}`} onClick={start} disabled={busy}
+        aria-label={`${text}. Jetzt synchronisieren`}
+      >
+        <span className="dot" style={{ background: color }} />
+        {text}
+        {SYNC_ICON_SMALL}
+      </button>
+      {run.state === "error" && run.message && <span className="sync-error" role="alert">{run.message}</span>}
+    </div>
   );
 }
 
