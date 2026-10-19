@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, isDemo, type Activity, type Result, type Session, type WeekData } from "../api";
 import { FlexTiles } from "../components/FlexTiles";
-import { activityFacts, flexProgress, isRun, matchRuns, sportInfo } from "../training";
+import { activityFacts, activityHref, flexProgress, isRun, matchRuns, sportInfo } from "../training";
 import { Loading, Problem } from "../components/ui";
 import { addDays, dayOfMonth, mondayOf, shortWeekday, todayIso, weekRange } from "../format";
 import { sessionColor } from "../zones";
@@ -201,8 +201,9 @@ function Check({ color }: { color: string }) {
 function Item({ s, act, past }: { s: Session; act?: Activity; past: boolean }) {
   const done = s.status === "erledigt" || !!act;
   const missed = !done && (s.status === "verpasst" || past);
+  const Wrap = act ? "a" : "div";
   return (
-    <div className="item">
+    <Wrap className={`item${act ? " item-link" : ""}`} {...(act ? { href: activityHref(act.id) } : {})}>
       {done ? <Check color="var(--z2)" /> : <span className="swatch" style={{ background: sessionColor(s), opacity: missed ? 0.4 : 1 }} />}
       <div style={{ minWidth: 0 }}>
         <span style={{ fontWeight: s.hard ? 600 : 400, opacity: missed ? 0.6 : 1 }}>{s.title}</span>
@@ -210,19 +211,25 @@ function Item({ s, act, past }: { s: Session; act?: Activity; past: boolean }) {
           : missed ? <small>Nicht erledigt</small>
           : s.duration_min ? <small>{s.duration_min} min{s.distance_km ? `, ca. ${km(s.distance_km)} km` : ""}{s.zone ? `, ${s.zone}` : ""}</small> : null}
       </div>
-    </div>
+      {act && <Chevron />}
+    </Wrap>
   );
 }
 
 function ActivityItem({ a }: { a: Activity }) {
   const info = sportInfo(a.sport);
   return (
-    <div className="item">
+    <a className="item item-link" href={activityHref(a.id)}>
       <Check color={info.color} />
       <div style={{ minWidth: 0 }}>
         <span>{info.label}</span>
         <small>Garmin{a.name ? `: ${a.name}` : ""}{activityFacts(a) ? `, ${activityFacts(a)}` : ""}</small>
       </div>
-    </div>
+      <Chevron />
+    </a>
   );
+}
+
+function Chevron() {
+  return <svg className="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>;
 }

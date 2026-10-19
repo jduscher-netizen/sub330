@@ -108,7 +108,7 @@ Trainingsphilosophie: polarisiert 80/20.
 - Login: eigener Passwort-Login (siehe Zugangsschutz)
 - Garmin-Sync: Python-Job per GitHub Actions Cron (stündlich 6 bis 22 Uhr), schreibt direkt über die Cloudflare-D1-API in die Datenbank (kein öffentlicher Schreib-Endpunkt)
 - Deployment: GitHub Actions mit Wrangler
-- Secrets ausschließlich in GitHub Secrets bzw. Cloudflare: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `GARMIN_EMAIL`, `GARMIN_PASSWORD`, `APP_PASSWORD`, `GH_ACTIONS_TOKEN` (fine-grained, nur dieses Repo, Actions: Lesen und Schreiben; kommt per Deploy als Pages-Secret für den Sync-Knopf)
+- Secrets ausschließlich in GitHub Secrets bzw. Cloudflare: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `GARMIN_EMAIL`, `GARMIN_PASSWORD`, `APP_PASSWORD`, `GH_ACTIONS_TOKEN` (fine-grained, nur dieses Repo, Actions: Lesen und Schreiben; kommt per Deploy als Pages-Secret für den Sync-Knopf), `ANTHROPIC_API_KEY` (KI-Coach)
 
 ### Datenmodell (Entwurf)
 - `planned_sessions`: Datum, Typ, Zone, Umfang, Priorität, Status, verknüpfte Aktivität
@@ -188,6 +188,9 @@ Regeln:
 - Heute-Screen: "Schon erledigt" (Aktivitäten von heute), Wochenziele und ein Hinweis, was heute passt (Regeln: nie zwei harte Tage hintereinander, kein Bein-Gym vor Intervallen oder Long Run), in `src/training.ts`.
 - Gym-Tab: Trainingstagebuch (`gym_entries`, Migration 0007): Übung, Sätze, Wdh., Gewicht pro Tag. Bekannte Übungen schlagen die letzten Werte vor, Chips für Übungen vom letzten Mal, Antippen eines Eintrags zum Ändern oder Löschen. API `GET/POST /api/gym`, `PUT/DELETE /api/gym/:id`.
 - Gewicht: Jans Waage ist nicht mit Garmin verbunden, deshalb Eingabe im Verlauf (`POST /api/weight`, schreibt `daily_metrics.weight_kg`). Der Heute-Screen ignoriert Zeilen, die nur ein Gewicht haben.
+- Laufanalyse (wie bei SUB4, Garmin, Strava): Der Sync holt für Läufe und Rad zusätzlich Runden (`get_activity_splits`) und den Verlauf (`get_activity_details`, auf etwa 400 Punkte verdichtet) einmal je Aktivität, dazu Kadenz, Höhenmeter, Trainingseffekt usw. in `details_json` (Migration 0008). Aktivitätsfenster jetzt 7 Tage. Auswertung in `functions/_lib/analysis.ts`: Plan-Abgleich je Einheitstyp (locker: Anteil Z1 bis Z2; Intervalle: Z5-Zeit, erkannte Belastungen, Nachlassen; Schwelle/HM-Tempo: Z4-Zeit, Pace gegen 4:38/km; Long Run: Entkopplung), Urteil erfüllt/teilweise/verfehlt. Detailansicht `#/aktivitaet/<id>` (`src/screens/Activity.tsx`) mit Puls- und Pace-Verlauf, Zonen, Belastungen, Splits; erreichbar aus Plan, Heute und den Wochenziel-Kacheln.
+- KI-Coach (`#/coach`, `src/screens/Coach.tsx`, `functions/api/coach.ts`, `functions/_lib/coach.ts`): Claude `claude-opus-5-5` mit `@anthropic-ai/sdk` in Pages Functions, Effort medium, `fallbacks: "default"` (Beta `server-side-fallback-2026-07-01`), gecachter Systemprompt mit Athletenprofil und Regeln. Nur lesende Werkzeuge: get_week, list_activities, analyze_activity, get_health, get_plan, get_gym_log. Gespräche in `coach_messages` unverändert gespeichert (inkl. Werkzeug-Aufrufe und Thinking-Blöcke, nur anhängen, nie nachträglich ändern). Pro Lauf zusätzlich "Einschätzung vom Coach" (Effort low), gespeichert in `activities.ai_comment`.
+- Secret `ANTHROPIC_API_KEY` (GitHub, per Deploy als Pages-Secret). Ohne Schlüssel zeigen Coach und Einschätzung einen Hinweis. Lokal testbar gegen einen API-Nachbau über `ANTHROPIC_BASE_URL` in `.dev.vars`.
 - Historie wird nicht nachgeladen, die App sammelt ab dem ersten Sync (Wunsch von Jan). Falls doch nötig: "Garmin-Sync" manuell mit Eingabe `days` (maximal 120).
 - Nächster Schritt 3: Heute-Screen mit echten Daten prüfen und verfeinern.
 

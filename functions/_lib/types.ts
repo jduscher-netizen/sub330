@@ -4,6 +4,10 @@ export interface Env {
   APP_PASSWORD?: string;
   /** GitHub-Token (fine-grained, nur Actions: write auf dieses Repo) für "Jetzt synchronisieren" */
   GH_ACTIONS_TOKEN?: string;
+  /** Claude-API für den KI-Coach und die Kommentare zu Läufen (Pages-Secret) */
+  ANTHROPIC_API_KEY?: string;
+  /** Nur für lokale Tests gegen einen Nachbau der API */
+  ANTHROPIC_BASE_URL?: string;
   /** Nur lokal: "1" schaltet die Zugangsprüfung ab (.dev.vars) */
   DEV_NO_AUTH?: string;
 }

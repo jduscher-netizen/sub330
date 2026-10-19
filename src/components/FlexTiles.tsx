@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { shortWeekday, dayOfMonth } from "../format";
-import { activityFacts, flexGoal, flexReached, type FlexProgress } from "../training";
+import { activityFacts, activityHref, flexGoal, flexReached, type FlexProgress } from "../training";
 
 const R = 22;
 const C = 2 * Math.PI * R;
@@ -51,11 +51,11 @@ export function FlexTiles({ items }: { items: FlexProgress[] }) {
           {sel.acts.length === 0 ? (
             <span className="muted">{sel.label}: diese Woche noch nichts.</span>
           ) : sel.acts.map((a) => (
-            <div key={a.id} className="ftile-act">
+            <a key={a.id} className="ftile-act" href={activityHref(a.id)}>
               <span className="ftile-day">{shortWeekday(a.start_time.slice(0, 10))} {dayOfMonth(a.start_time.slice(0, 10))}.</span>
               <span className="grow">{a.name ?? sel.label}</span>
               <span className="muted">{activityFacts(a)}</span>
-            </div>
+            </a>
           ))}
           {sel.note && <span className="ftile-note">{sel.note}</span>}
         </div>

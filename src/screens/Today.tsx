@@ -5,7 +5,7 @@ import { Loading, Problem, SyncPill } from "../components/ui";
 import { longDate, weeksUntil } from "../format";
 import { sessionColor, shoeFor, ZONE_HEIGHT, ZONES } from "../zones";
 import { FlexTiles } from "../components/FlexTiles";
-import { activityFacts, flexProgress, isRun, sportInfo, todayAdvice } from "../training";
+import { activityFacts, activityHref, flexProgress, isRun, sportInfo, todayAdvice } from "../training";
 
 const HM_DATE = "2027-05-23";
 
@@ -90,15 +90,22 @@ export function Today() {
           <h2>Schon erledigt</h2>
           <div>
             {activities.map((a) => (
-              <div className="row" key={a.id}>
+              <a className="row row-link" key={a.id} href={activityHref(a.id)}>
                 <span className="swatch" style={{ background: sportInfo(a.sport).color }} />
                 <span className="grow">{sportInfo(a.sport).label}{a.name ? <span className="muted" style={{ fontSize: 13 }}>, {a.name}</span> : null}</span>
                 <span className="muted" style={{ fontSize: 13, textAlign: "right" }}>{activityFacts(a)}</span>
-              </div>
+              </a>
             ))}
           </div>
         </section>
       )}
+
+      <a className="coach-cta" href={`${location.search}#/coach`}>
+        <span className="coach-cta-icon" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z" /></svg>
+        </span>
+        <span className="grow"><b>Coach fragen</b><small>Kennt Plan, Läufe und Werte</small></span>
+      </a>
 
       {flex.length > 0 && (
         <section className="section" aria-label="Diese Woche frei einteilen">

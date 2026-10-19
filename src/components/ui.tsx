@@ -13,7 +13,7 @@ const ICONS: Record<Tab, ReactNode> = {
 };
 const LABELS: Record<Tab, string> = { heute: "Heute", plan: "Plan", gym: "Gym", verlauf: "Verlauf", profil: "Profil" };
 
-export function TabBar({ current }: { current: Tab }) {
+export function TabBar({ current }: { current: Tab | null }) {
   const keep = location.search;
   return (
     <nav className="tabbar" aria-label="Hauptnavigation">

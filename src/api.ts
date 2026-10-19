@@ -1,4 +1,4 @@
-import { demoGarmin, demoGym, demoOverview, demoToday, demoWeek } from "./demo";
+import { demoActivity, demoCoach, demoGarmin, demoGym, demoOverview, demoToday, demoWeek } from "./demo";
 
 export type Zone = "Z1" | "Z2" | "Z3" | "Z4" | "Z5";
 
@@ -51,6 +51,25 @@ export interface GymDay { date: string; exercises: number; sets: number; volume:
 export interface GymData { date: string; entries: GymEntry[]; exercises: GymLast[]; days: GymDay[] }
 export type GymInput = Omit<GymEntry, "id" | "note"> & { note?: string | null };
 
+export type Tone = "good" | "warn" | "bad" | "info";
+export interface Lap { dist: number; dur: number; v: number; hr: number | null; hr_max: number | null; cad: number | null; elev: number | null; kind: string | null }
+export interface Stream { t: number[]; hr: (number | null)[]; v: (number | null)[]; alt: (number | null)[]; cad: (number | null)[] }
+export interface Analysis {
+  verdict: "erfüllt" | "teilweise" | "verfehlt" | "ohne Plan"; headline: string; findings: { tone: Tone; text: string }[];
+  pace_s_per_km: number | null; zones: { sec: number[]; pct: number[] } | null; easy_pct: number | null; decoupling_pct: number | null;
+  splits: { km: number; sec: number; hr: number | null }[]; reps: { n: number; dur: number; dist: number; pace: number | null; hr: number | null; hr_max: number | null }[];
+  planned: { title: string; type: string; duration_min: number | null; distance_km: number | null; target_min: Record<string, number> } | null;
+}
+export interface ActivityDetail {
+  activity: Activity & { max_hr: number | null; training_load: number | null; zones: number[] | null };
+  details: Record<string, number | string> | null; laps: Lap[]; stream: Stream | null;
+  planned: (Session & { structure_json?: string | null }) | null; analysis: Analysis;
+  metrics: { readiness_score: number | null; hrv_last_night: number | null; sleep_score: number | null; resting_hr: number | null } | null;
+  ai_comment: string | null; ai_enabled: boolean;
+}
+export interface CoachMsg { role: "user" | "assistant"; text: string; tools?: string[]; at: string }
+export interface CoachData { thread: number; enabled: boolean; messages: CoachMsg[] }
+
 export type Result<T> = { ok: true; data: T } | { ok: false; status: number; message: string };
 
 export const isDemo = new URLSearchParams(location.search).has("demo");
@@ -67,7 +86,7 @@ async function get<T>(path: string, demo: () => T): Promise<Result<T>> {
   }
 }
 
-async function post(path: string, body?: unknown, method = "POST"): Promise<{ ok: boolean; message?: string }> {
+async function post<T = Record<string, unknown>>(path: string, body?: unknown, method = "POST"): Promise<{ ok: boolean; message?: string } & Partial<T>> {
   try {
     const res = await fetch(path, {
       method,
@@ -76,9 +95,9 @@ async function post(path: string, body?: unknown, method = "POST"): Promise<{ ok
       body: body ? JSON.stringify(body) : undefined,
     });
     const data = await res.json().catch(() => ({}));
-    return { ok: res.ok, message: data.message };
+    return { ...data, ok: res.ok && data.ok !== false, message: data.message };
   } catch {
-    return { ok: false, message: "Keine Verbindung. Prüfe dein Netz." };
+    return { ok: false, message: "Keine Verbindung. Prüfe dein Netz." } as { ok: boolean; message?: string } & Partial<T>;
   }
 }
 
@@ -95,5 +114,13 @@ export const api = {
   updateGym: (id: number, e: GymInput) => (isDemo ? Promise.resolve({ ok: true, message: undefined }) : post(`/api/gym/${id}`, e, "PUT")),
   deleteGym: (id: number) => (isDemo ? Promise.resolve({ ok: true, message: undefined }) : post(`/api/gym/${id}`, undefined, "DELETE")),
   saveWeight: (kg: string) => (isDemo ? Promise.resolve({ ok: true, message: undefined }) : post("/api/weight", { kg })),
+  activity: (id: string) => get<ActivityDetail>(`/api/activity/${encodeURIComponent(id)}`, () => demoActivity(id)),
+  activityComment: (id: string) => (isDemo
+    ? new Promise<{ ok: boolean; message?: string; text?: string }>((r) => setTimeout(() => r({ ok: true, text: "Beispiel: Sauber gelaufene Intervalle. Die erste Wiederholung war etwas zu schnell, danach sehr gleichmäßig. Morgen locker, damit der Long Run am Sonntag frisch wird." }), 800))
+    : post<{ text: string }>(`/api/activity/${encodeURIComponent(id)}/comment`)),
+  coach: () => get<CoachData>("/api/coach", demoCoach),
+  coachAsk: (text: string, newThread = false) => (isDemo
+    ? new Promise<{ ok: boolean; message?: string; messages?: CoachMsg[] }>((r) => setTimeout(() => r({ ok: false, message: "In den Beispieldaten antwortet der Coach nicht." }), 400))
+    : post<{ messages: CoachMsg[] }>("/api/coach", { text, new_thread: newThread })),
   sendMfaCode: (code: string) => (isDemo ? Promise.resolve({ ok: true, message: undefined }) : post("/api/garmin/mfa", { code })),
 };

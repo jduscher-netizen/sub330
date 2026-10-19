@@ -3,7 +3,7 @@
 import json
 import unittest
 
-from garmin_sync import build_activity, build_metrics, latest_readiness, sport_of
+from garmin_sync import build_activity, build_metrics, laps_of, latest_readiness, sport_of, stream_of
 
 READINESS = [
     {"timestampLocal": "2026-10-18T06:40:00.0", "score": 61, "level": "MODERATE"},
@@ -99,6 +99,38 @@ class ActivityTest(unittest.TestCase):
 
     def test_incomplete_activity_is_skipped(self):
         self.assertIsNone(build_activity({"activityName": "ohne ID"}))
+
+
+class DetailTest(unittest.TestCase):
+    def test_details_in_activity(self):
+        row = build_activity({"activityId": 1, "startTimeLocal": "2026-10-20 18:00:00", "activityType": {"typeKey": "running"},
+                              "averageSpeed": 2.8, "elevationGain": 42.0, "averageRunningCadenceInStepsPerMinute": 168.4,
+                              "aerobicTrainingEffect": 2.9, "trainingEffectLabel": "AEROBIC_BASE"})
+        d = json.loads(row["details_json"])
+        self.assertEqual(d["avg_speed"], 2.8)
+        self.assertEqual(d["cadence"], 168.4)
+        self.assertEqual(d["te_label"], "AEROBIC_BASE")
+
+    def test_laps(self):
+        laps = laps_of({"lapDTOs": [
+            {"distance": 1000.0, "duration": 352.1, "averageSpeed": 2.84, "averageHR": 141, "maxHR": 148,
+             "averageRunCadence": 166.0, "elevationGain": 4.0, "intensityType": "ACTIVE"},
+            {"distance": 0, "duration": 0},
+        ]})
+        self.assertEqual(len(laps), 1)
+        self.assertEqual(laps[0]["hr"], 141)
+        self.assertEqual(laps[0]["kind"], "ACTIVE")
+
+    def test_stream_downsampled(self):
+        desc = [{"key": "sumDuration", "metricsIndex": 0}, {"key": "directHeartRate", "metricsIndex": 1},
+                {"key": "directSpeed", "metricsIndex": 2}, {"key": "directDoubleCadence", "metricsIndex": 3}]
+        samples = [{"metrics": [float(i), 140 + i % 5, 2.8, 334.0]} for i in range(1000)]
+        st = stream_of({"metricDescriptors": desc, "activityDetailMetrics": samples}, points=100)
+        self.assertEqual(len(st["t"]), 100)
+        self.assertEqual(st["cad"][0], 167)
+        self.assertEqual(st["v"][0], 2.8)
+        self.assertIsNone(st["alt"][0])
+        self.assertIsNone(stream_of({"metricDescriptors": [], "activityDetailMetrics": []}))
 
 
 if __name__ == "__main__":

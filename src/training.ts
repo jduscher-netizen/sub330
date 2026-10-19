@@ -102,3 +102,6 @@ export function flexGoal(f: FlexProgress): string {
   if (f.min === 0) return "optional";
   return f.min === f.max ? `von ${f.min}` : `von ${f.min} bis ${f.max}`;
 }
+
+/** Link zur Detailansicht einer Aktivität (Demo-Parameter bleibt erhalten) */
+export const activityHref = (id: string) => `${location.search}#/aktivitaet/${encodeURIComponent(id)}`;

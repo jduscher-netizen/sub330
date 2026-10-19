@@ -1,4 +1,4 @@
-import type { Activity, GarminStatus, GymData, OverviewData, Session, TodayData, WeekData, WeekTarget } from "./api";
+import type { Activity, ActivityDetail, CoachData, GarminStatus, GymData, Lap, OverviewData, Session, TodayData, WeekData, WeekTarget } from "./api";
 import { addDays, mondayOf, todayIso } from "./format";
 
 // Beispieldaten für die Ansicht mit ?demo, solange noch keine echten Daten da sind.
@@ -129,6 +129,60 @@ export function demoGym(date?: string): GymData {
       ...(isToday ? [{ date: d, exercises: 3, sets: 10, volume: 5380 }] : []),
       { date: addDays(d, -2), exercises: 4, sets: 15, volume: 6120 },
       { date: addDays(d, -5), exercises: 5, sets: 16, volume: 7250 },
+    ],
+  };
+}
+
+/** Beispiel-Intervalllauf mit Verlauf und Runden für die Detailansicht */
+export function demoActivity(id: string): ActivityDetail {
+  const date = todayIso();
+  const laps: Lap[] = [{ dist: 2600, dur: 900, v: 2.89, hr: 141, hr_max: 149, cad: 166, elev: 6, kind: "WARMUP" }];
+  for (let i = 0; i < 5; i++) {
+    laps.push({ dist: 760 - i * 8, dur: 180, v: 4.22 - i * 0.045, hr: 168 + i, hr_max: 176 + i, cad: 182, elev: 1, kind: "INTERVAL" });
+    if (i < 4) laps.push({ dist: 300, dur: 120, v: 2.5, hr: 152, hr_max: 165, cad: 160, elev: 0, kind: "RECOVERY" });
+  }
+  laps.push({ dist: 1700, dur: 600, v: 2.83, hr: 146, hr_max: 152, cad: 164, elev: 3, kind: "COOLDOWN" });
+  const t: number[] = [], hr: number[] = [], v: number[] = [], alt: number[] = [], cad: number[] = [];
+  let time = 0, h = 120;
+  for (const l of laps) {
+    for (let s = 0; s < l.dur; s += 10) {
+      time += 10;
+      h += ((l.hr ?? 140) + (l.kind === "INTERVAL" ? 6 * (s / l.dur) : 0) - h) * 0.12;
+      t.push(time); hr.push(Math.round(h)); v.push(Math.round((l.v + Math.sin(time / 37) * 0.05) * 100) / 100);
+      alt.push(Math.round((180 + Math.sin(time / 400) * 6) * 10) / 10); cad.push(l.cad ?? 165);
+    }
+  }
+  const zones = [420, 1260, 360, 600, 540];
+  return {
+    activity: { id, source: "garmin", sport: "run", name: "Würzburg Intervalle", start_time: `${date}T18:05:00`, duration_s: time, distance_m: 9800, avg_hr: 154, max_hr: 181, training_load: 142, zones },
+    details: { avg_speed: 3.11, elev_gain: 38, cadence: 171, te_aerobic: 3.6, te_anaerobic: 3.1, te_label: "VO2MAX", calories: 640, vo2max: 51 },
+    laps, stream: { t, hr, v, alt, cad },
+    planned: { id: 2, date, type: "intervals", title: "VO2max-Intervalle, 5 × 3 min", zone: "Z5", duration_min: 62, distance_km: 11, hard: 1, status: "geplant", notes: null },
+    analysis: {
+      verdict: "erfüllt", headline: "VO2max-Intervalle, 5 × 3 min: Vorgabe erfüllt",
+      findings: [
+        { tone: "good", text: "Umfang passt: 55 von 62 min." },
+        { tone: "good", text: "9 min in Z5 und 10 min in Z4 bei 15 min geplanter Belastung. Intensität erreicht." },
+        { tone: "good", text: "5 von 5 Belastungen erkannt, Schnitt 4:05/km." },
+        { tone: "warn", text: "Letzte Belastung 4:12/km, erste 3:57/km: deutlich nachgelassen. Erste Wiederholung kontrollierter angehen." },
+      ],
+      pace_s_per_km: 3300 / 9.8, zones: { sec: zones, pct: [13, 39, 11, 19, 17] }, easy_pct: 52, decoupling_pct: null,
+      splits: [348, 344, 300, 262, 330, 251, 318, 247, 335].map((sec, i) => ({ km: i + 1, sec, hr: [139, 144, 158, 171, 155, 174, 157, 177, 149][i] })),
+      reps: laps.filter((l) => l.kind === "INTERVAL").map((l, i) => ({ n: i + 1, dur: l.dur, dist: l.dist, pace: 1000 / l.v, hr: l.hr, hr_max: l.hr_max })),
+      planned: { title: "VO2max-Intervalle, 5 × 3 min", type: "intervals", duration_min: 62, distance_km: 11, target_min: { Z2: 15, Z5: 15, Z1: 18 } },
+    },
+    metrics: { readiness_score: 78, hrv_last_night: 58, sleep_score: 84, resting_hr: 52 },
+    ai_comment: null, ai_enabled: true,
+  };
+}
+
+export function demoCoach(): CoachData {
+  const at = new Date().toISOString();
+  return {
+    thread: 1, enabled: true,
+    messages: [
+      { role: "user", text: "Wie war meine Woche bisher?", at },
+      { role: "assistant", text: "Bisher 23 km in 2 von 4 Läufen, beide im Soll. Die Intervalle am Dienstag waren stark, nur die letzte Wiederholung wurde langsamer.\n\nGym 3 von 3 bis 4 ist schon erfüllt, Schwimmen fehlt noch. Morgen steht die Schwelle an, heute also nur Oberkörper oder Schwimmen, keine Beine.", tools: ["get_week", "analyze_activity"], at },
     ],
   };
 }

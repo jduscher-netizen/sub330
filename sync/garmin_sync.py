@@ -18,7 +18,10 @@ from zoneinfo import ZoneInfo
 from d1 import D1, D1Error
 
 TZ = ZoneInfo("Europe/Berlin")
-ACTIVITY_DAYS = 3
+ACTIVITY_DAYS = 7  # eine Woche, damit auch nachträglich hochgeladene Aktivitäten ankommen
+DETAIL_SPORTS = ("run", "bike")  # Runden und Verlauf für die Laufanalyse
+MAX_DETAILS_PER_RUN = 10
+STREAM_POINTS = 400
 METRIC_DAYS = 2  # heute und gestern (gestern wird nachts noch fertig)
 MAX_BACKFILL_DAYS = 120
 
@@ -258,7 +261,91 @@ def build_activity(act: dict[str, Any], hr_zones: Any = None) -> dict[str, Any] 
         "max_hr": _int(act.get("maxHR")),
         "zone_seconds_json": json.dumps(zones) if zones else None,
         "training_load": round(_num(act.get("activityTrainingLoad")), 1) if _num(act.get("activityTrainingLoad")) else None,
+        "details_json": json.dumps(details_of(act), ensure_ascii=False),
     }
+
+
+# Zusatzwerte aus der Aktivitätsliste: Garmin-Feld -> eigener Name
+DETAIL_FIELDS = {
+    "averageSpeed": "avg_speed", "maxSpeed": "max_speed", "movingDuration": "moving_s",
+    "elevationGain": "elev_gain", "elevationLoss": "elev_loss",
+    "averageRunningCadenceInStepsPerMinute": "cadence", "averageBikingCadenceInRevPerMinute": "cadence_bike",
+    "avgStrideLength": "stride_cm", "avgGroundContactTime": "gct_ms", "avgVerticalOscillation": "vo_cm",
+    "avgPower": "power", "normPower": "power_np", "calories": "calories",
+    "aerobicTrainingEffect": "te_aerobic", "anaerobicTrainingEffect": "te_anaerobic",
+    "vO2MaxValue": "vo2max", "minTemperature": "temp_min", "maxTemperature": "temp_max",
+}
+
+
+def details_of(act: dict[str, Any]) -> dict[str, Any]:
+    out: dict[str, Any] = {}
+    for src, dst in DETAIL_FIELDS.items():
+        v = _num(act.get(src))
+        if v is not None:
+            out[dst] = round(v, 3)
+    label = act.get("trainingEffectLabel")
+    if isinstance(label, str):
+        out["te_label"] = label
+    return out
+
+
+def laps_of(splits: Any) -> list[dict[str, Any]]:
+    """Runden aus get_activity_splits: Distanz, Dauer, Tempo, Puls, Kadenz, Art der Runde."""
+    laps = (splits or {}).get("lapDTOs") if isinstance(splits, dict) else None
+    out = []
+    for lap in laps or []:
+        if not isinstance(lap, dict):
+            continue
+        row = {
+            "dist": round(_num(lap.get("distance")) or 0, 1),
+            "dur": round(_num(lap.get("duration")) or 0, 1),
+            "v": round(_num(lap.get("averageSpeed")) or 0, 3),
+            "hr": _int(lap.get("averageHR")),
+            "hr_max": _int(lap.get("maxHR")),
+            "cad": _int(lap.get("averageRunCadence")),
+            "elev": _int(lap.get("elevationGain")),
+            "kind": lap.get("intensityType"),
+        }
+        if row["dur"] > 0:
+            out.append(row)
+    return out
+
+
+def stream_of(details: Any, points: int = STREAM_POINTS) -> dict[str, list] | None:
+    """Verlauf aus get_activity_details, verdichtet auf höchstens `points` Punkte."""
+    if not isinstance(details, dict):
+        return None
+    index = {d.get("key"): d.get("metricsIndex") for d in details.get("metricDescriptors") or [] if isinstance(d, dict)}
+    samples = [s.get("metrics") or [] for s in details.get("activityDetailMetrics") or [] if isinstance(s, dict)]
+    t_key = next((k for k in ("sumDuration", "sumElapsedDuration", "sumMovingDuration") if k in index), None)
+    if not samples or t_key is None:
+        return None
+
+    def col(key: str) -> list[float | None]:
+        i = index.get(key)
+        if not isinstance(i, int):
+            return [None] * len(samples)
+        return [_num(m[i]) if i < len(m) else None for m in samples]
+
+    t = col(t_key)
+    cad = col("directRunCadence")
+    if all(c is None for c in cad):
+        dbl = col("directDoubleCadence")
+        cad = [c / 2 if c is not None else None for c in dbl] if any(c is not None for c in dbl) else col("directBikeCadence")
+    cols = {"hr": col("directHeartRate"), "v": col("directSpeed"), "alt": col("directElevation"), "cad": cad}
+    step = max(1, len(samples) // points)
+    out: dict[str, list] = {"t": [], "hr": [], "v": [], "alt": [], "cad": []}
+    for start in range(0, len(samples), step):
+        idx = range(start, min(start + step, len(samples)))
+        ts = [t[i] for i in idx if t[i] is not None]
+        if not ts:
+            continue
+        out["t"].append(round(ts[-1]))
+        for k, values in cols.items():
+            vals = [values[i] for i in idx if values[i] is not None]
+            avg = sum(vals) / len(vals) if vals else None
+            out[k].append(None if avg is None else round(avg, 2 if k == "v" else 0 if k != "alt" else 1))
+    return out if out["t"] else None
 
 
 # ---------------------------------------------------------------------------
@@ -272,7 +359,7 @@ METRIC_COLS = [
 ]
 ACTIVITY_COLS = [
     "source", "external_id", "sport", "name", "start_time", "duration_s", "distance_m",
-    "avg_hr", "max_hr", "zone_seconds_json", "training_load",
+    "avg_hr", "max_hr", "zone_seconds_json", "training_load", "details_json",
 ]
 
 
@@ -407,6 +494,24 @@ def run(db: D1) -> tuple[bool, str]:
         if row:
             upsert_activity(db, row)
             n_acts += 1
+
+    # Runden und Verlauf nur einmal je Aktivität holen (Läufe und Rad)
+    candidates = [a for a in acts if isinstance(a, dict) and a.get("activityId")
+                  and sport_of((a.get("activityType") or {}).get("typeKey")) in DETAIL_SPORTS
+                  and (_num(a.get("duration")) or 0) >= 300]
+    if candidates:
+        ids = [f"garmin:{a['activityId']}" for a in candidates]
+        have = {r["id"] for r in db.query(
+            f"SELECT id FROM activities WHERE stream_json IS NOT NULL AND id IN ({', '.join('?' * len(ids))})", ids)}
+        for a in [a for a in candidates if f"garmin:{a['activityId']}" not in have][:MAX_DETAILS_PER_RUN]:
+            ext = a["activityId"]
+            splits = fetch(f"Runden {ext}", lambda: garmin.get_activity_splits(ext))
+            details = fetch(f"Verlauf {ext}", lambda: garmin.get_activity_details(ext, maxchart=2000, maxpoly=0))
+            laps, stream = laps_of(splits), stream_of(details)
+            if laps or stream:
+                db.query("UPDATE activities SET laps_json = ?, stream_json = ? WHERE id = ?",
+                         [json.dumps(laps) if laps else None, json.dumps(stream, separators=(",", ":")) if stream else None,
+                          f"garmin:{ext}"])
 
     summary = (f"{metric_days} {'Tag' if metric_days == 1 else 'Tage'} Gesundheitswerte, "
                f"{n_acts} {'Aktivität' if n_acts == 1 else 'Aktivitäten'}")

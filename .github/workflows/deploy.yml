@@ -68,6 +68,16 @@ jobs:
             printf '%s' "$GH_ACTIONS_TOKEN" | npx wrangler pages secret put GH_ACTIONS_TOKEN --project-name sub330
           fi
 
+      - name: API-Schlüssel für den KI-Coach an Cloudflare übergeben
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -z "${ANTHROPIC_API_KEY}" ]; then
+            echo "::warning::GitHub-Secret ANTHROPIC_API_KEY fehlt, der KI-Coach bleibt aus."
+          else
+            printf '%s' "$ANTHROPIC_API_KEY" | npx wrangler pages secret put ANTHROPIC_API_KEY --project-name sub330
+          fi
+
       - name: Veröffentlichen
         run: npx wrangler pages deploy dist --project-name sub330 --branch main --commit-dirty=true
 
