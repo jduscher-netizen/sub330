@@ -18,6 +18,7 @@ const demoTargets = (): WeekTarget[] => [
   { category: "swim", target_min: 1, target_max: 2, note: "Kraultechnik" },
   { category: "padel", target_min: 1, target_max: 1, note: null },
   { category: "bike", target_min: 0, target_max: 1, note: "Optional, nur Z2" },
+  { category: "mobility", target_min: 2, target_max: 2, note: "Von Hand abhaken, Garmin zeichnet das nicht auf" },
 ];
 
 function act(id: number, date: string, time: string, sport: string, name: string, min: number, m: number | null, hr: number, zones?: number[]): Activity {
@@ -63,6 +64,7 @@ export function demoToday(): TodayData {
     activities: week.filter((a) => a.start_time.slice(0, 10) === date),
     week_activities: week,
     targets: demoTargets(),
+    manual: [{ id: 1, date: mo, category: "mobility" }],
     sync: [{ source: "garmin", last_ok: new Date(Date.now() - 8 * 60_000).toISOString(), last_message: null, last_ok_flag: 1 }],
   };
 }
@@ -82,6 +84,7 @@ export function demoWeek(start?: string): WeekData {
     ],
     activities: demoActivities(mo, todayIso()),
     targets: demoTargets(),
+    manual: [{ id: 1, date: mo, category: "mobility" }],
   };
 }
 
@@ -112,24 +115,28 @@ export function demoGarmin(): GarminStatus {
 
 export function demoGym(date?: string): GymData {
   const d = date ?? todayIso();
-  const e = (id: number, exercise: string, sets: number, reps: number, weight_kg: number | null) => ({ id, date: d, exercise, sets, reps, weight_kg, note: null });
   const isToday = d === todayIso();
+  const legs = ["Kniebeuge", "Rumänisches Kreuzheben", "Beinpresse", "Ausfallschritte", "Beinbeuger", "Wadenheben"];
+  const last = (exercise: string, daysAgo: number, sets: number, reps: number, weight_kg: number | null) => ({ exercise, date: addDays(d, -daysAgo), sets, reps, weight_kg });
   return {
     date: d,
-    entries: isToday ? [e(1, "Kniebeuge", 4, 8, 80), e(2, "Rumänisches Kreuzheben", 3, 10, 70), e(3, "Ausfallschritte", 3, 12, 20)] : [],
+    entries: isToday ? [
+      { id: 1, date: d, exercise: "Kniebeuge", sets: 4, reps: 8, weight_kg: 82.5, note: null, day_type: "legs" as const },
+      { id: 2, date: d, exercise: "Rumänisches Kreuzheben", sets: 3, reps: 10, weight_kg: 70, note: null, day_type: "legs" as const },
+    ] : [],
     exercises: [
-      { exercise: "Bankdrücken", date: addDays(d, -2), sets: 4, reps: 8, weight_kg: 72.5 },
-      { exercise: "Klimmzüge", date: addDays(d, -2), sets: 4, reps: 6, weight_kg: null },
-      { exercise: "Kniebeuge", date: addDays(d, -5), sets: 4, reps: 8, weight_kg: 77.5 },
-      { exercise: "Rumänisches Kreuzheben", date: addDays(d, -5), sets: 3, reps: 10, weight_kg: 67.5 },
-      { exercise: "Ausfallschritte", date: addDays(d, -5), sets: 3, reps: 12, weight_kg: 20 },
-      { exercise: "Rudern am Kabel", date: addDays(d, -2), sets: 3, reps: 12, weight_kg: 55 },
+      last("Kniebeuge", 5, 4, 8, 80), last("Rumänisches Kreuzheben", 5, 3, 10, 67.5), last("Beinpresse", 5, 3, 12, 140),
+      last("Ausfallschritte", 5, 3, 12, 20), last("Beinbeuger", 5, 3, 12, 45), last("Wadenheben", 5, 4, 15, 60),
+      last("Bankdrücken", 3, 4, 8, 72.5), last("Schulterdrücken", 3, 3, 10, 22), last("Klimmzüge", 2, 4, 6, null), last("Rudern am Kabel", 2, 3, 12, 55),
     ],
     days: [
-      ...(isToday ? [{ date: d, exercises: 3, sets: 10, volume: 5380 }] : []),
-      { date: addDays(d, -2), exercises: 4, sets: 15, volume: 6120 },
-      { date: addDays(d, -5), exercises: 5, sets: 16, volume: 7250 },
+      ...(isToday ? [{ date: d, day_type: "legs" as const, exercises: 2, sets: 7, volume: 4740 }] : []),
+      { date: addDays(d, -2), day_type: "pull" as const, exercises: 5, sets: 16, volume: 6120 },
+      { date: addDays(d, -3), day_type: "push" as const, exercises: 5, sets: 15, volume: 5900 },
+      { date: addDays(d, -5), day_type: "legs" as const, exercises: 6, sets: 20, volume: 9250 },
     ],
+    templates: { push: ["Bankdrücken", "Schulterdrücken", "Schrägbankdrücken", "Seitheben", "Trizepsdrücken"], pull: ["Klimmzüge", "Rudern am Kabel", "Latzug", "Face Pulls", "Bizepscurls"], legs },
+    last_by_type: { push: addDays(d, -3), pull: addDays(d, -2), legs: addDays(d, -5) },
   };
 }
 

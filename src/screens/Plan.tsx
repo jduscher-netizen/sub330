@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, isDemo, type Activity, type Result, type Session, type WeekData } from "../api";
 import { FlexTiles } from "../components/FlexTiles";
+import { MoveSheet } from "../components/MoveSheet";
 import { activityFacts, activityHref, flexProgress, isRun, matchRuns, sportInfo } from "../training";
 import { Loading, Problem } from "../components/ui";
 import { addDays, dayOfMonth, mondayOf, shortWeekday, todayIso, weekRange } from "../format";
@@ -24,7 +25,8 @@ function weekNumber(monday: string): number {
 export function Plan() {
   const [start, setStart] = useState(mondayOf(todayIso()));
   const [res, setRes] = useState<Result<WeekData> | null>(null);
-  useEffect(() => { setRes(null); api.week(start).then(setRes); }, [start]);
+  const reload = () => api.week(start).then(setRes);
+  useEffect(() => { setRes(null); reload(); }, [start]);
 
   const wk = weekNumber(start);
   const phase = (() => { let n = 0; for (const p of PHASES) { n += p.weeks; if (wk <= n) return p.name; } return null; })();
@@ -61,12 +63,13 @@ export function Plan() {
         )}
       </header>
 
-      {!res ? <Loading /> : !res.ok ? <Problem status={res.status} message={res.message} /> : <Week data={res.data} />}
+      {!res ? <Loading /> : !res.ok ? <Problem status={res.status} message={res.message} /> : <Week data={res.data} reload={reload} />}
     </div>
   );
 }
 
-function Week({ data }: { data: WeekData }) {
+function Week({ data, reload }: { data: WeekData; reload: () => void }) {
+  const [moving, setMoving] = useState<Session | null>(null);
   const today = todayIso();
   const days = Array.from({ length: 7 }, (_, i) => addDays(data.start, i));
   const { matched, rest } = matchRuns(data.sessions, data.activities);
@@ -77,7 +80,8 @@ function Week({ data }: { data: WeekData }) {
 
   return (
     <>
-      <WeekSummary data={data} matched={matched} />
+      <WeekSummary data={data} matched={matched} reload={reload} />
+      {moving && <MoveSheet session={moving} onClose={() => setMoving(null)} onMoved={() => { setMoving(null); reload(); }} />}
       <ol className="days" aria-label="Tage der Woche">
         {days.map((d) => {
           const items = data.sessions.filter((s) => s.date === d);
@@ -92,7 +96,7 @@ function Week({ data }: { data: WeekData }) {
               </div>
               <div className="day-items">
                 {items.length === 0 && extra.length === 0 && <span className="muted" style={{ fontSize: 15 }}>{d < today ? "Frei" : "Kein Lauf, frei einteilen"}</span>}
-                {items.map((s) => <Item key={s.id} s={s} act={matched.get(s.id)} past={d < today} />)}
+                {items.map((s) => <Item key={s.id} s={s} act={matched.get(s.id)} past={d < today} onMove={() => setMoving(s)} />)}
                 {extra.map((a) => <ActivityItem key={a.id} a={a} />)}
               </div>
             </li>
@@ -116,7 +120,7 @@ function parseZones(json?: string | null): number[] | null {
 }
 
 /** Bilanz der Woche: Laufumfang, Läufe, harte Tage, 80/20 und Wochenziele für alles andere. */
-function WeekSummary({ data, matched }: { data: WeekData; matched: Map<number, Activity> }) {
+function WeekSummary({ data, matched, reload }: { data: WeekData; matched: Map<number, Activity>; reload: () => void }) {
   const runs = data.sessions.filter((s) => isRun(s.type));
   const acts = data.activities;
   const runsDone = runs.filter((s) => s.status === "erledigt" || matched.has(s.id)).length;
@@ -143,7 +147,7 @@ function WeekSummary({ data, matched }: { data: WeekData; matched: Map<number, A
     }
   }
   const easyPct = easy + hard > 0 ? Math.round((easy / (easy + hard)) * 100) : null;
-  const flex = flexProgress(data.targets, acts);
+  const flex = flexProgress(data.targets, acts, data.manual ?? []);
 
   return (
     <section className="box week-sum" aria-label="Wochenbilanz">
@@ -185,7 +189,7 @@ function WeekSummary({ data, matched }: { data: WeekData; matched: Map<number, A
       {flex.length > 0 && (
         <div className="flex-list" aria-label="Wochenziele ohne festen Tag">
           <span className="flex-head">Frei einteilen</span>
-          <FlexTiles items={flex} />
+          <FlexTiles items={flex} onChanged={reload} />
         </div>
       )}
     </section>
@@ -198,20 +202,26 @@ function Check({ color }: { color: string }) {
   );
 }
 
-function Item({ s, act, past }: { s: Session; act?: Activity; past: boolean }) {
+function Item({ s, act, past, onMove }: { s: Session; act?: Activity; past: boolean; onMove: () => void }) {
   const done = s.status === "erledigt" || !!act;
   const missed = !done && (s.status === "verpasst" || past);
   const Wrap = act ? "a" : "div";
   return (
-    <Wrap className={`item${act ? " item-link" : ""}`} {...(act ? { href: activityHref(act.id) } : {})}>
+    <Wrap className={`item${act ? " item-link" : ""}${!done && isRun(s.type) ? " item-move" : ""}`} {...(act ? { href: activityHref(act.id) } : {})}>
       {done ? <Check color="var(--z2)" /> : <span className="swatch" style={{ background: sessionColor(s), opacity: missed ? 0.4 : 1 }} />}
       <div style={{ minWidth: 0 }}>
         <span style={{ fontWeight: s.hard ? 600 : 400, opacity: missed ? 0.6 : 1 }}>{s.title}</span>
         {act ? <small>Garmin: {activityFacts(act)}</small>
           : missed ? <small>Nicht erledigt</small>
           : s.duration_min ? <small>{s.duration_min} min{s.distance_km ? `, ca. ${km(s.distance_km)} km` : ""}{s.zone ? `, ${s.zone}` : ""}</small> : null}
+        {s.moved_from && !act && <small>verschoben von {shortWeekday(s.moved_from)} {dayOfMonth(s.moved_from)}.</small>}
       </div>
       {act && <Chevron />}
+      {!done && isRun(s.type) && (
+        <button type="button" className="move-btn" onClick={onMove} aria-label={`${s.title} ${missed ? "nachholen" : "verschieben"}`}>
+          {missed ? "Nachholen" : "Verschieben"}
+        </button>
+      )}
     </Wrap>
   );
 }

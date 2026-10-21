@@ -27,6 +27,7 @@ export interface Session {
   hard: number;
   status: string;
   notes: string | null;
+  moved_from?: string | null;
   structure?: Block[] | null;
   activity_id?: string | null;
 }
@@ -34,21 +35,23 @@ export interface SyncState { source: string; last_ok: string | null; last_messag
 export interface Activity { id: string; source: string; sport: string; name: string | null; start_time: string; duration_s: number | null; distance_m: number | null; avg_hr: number | null; zone_seconds_json?: string | null }
 export interface Race { id: number; name: string; date: string | null; date_label: string | null; distance_km: number; target_seconds: number | null; pb_seconds: number | null }
 
+export interface ManualEntry { id: number; date: string; category: string }
 export interface WeekTarget { category: string; target_min: number; target_max: number; note: string | null }
 export type SessionLite = Pick<Session, "date" | "type" | "title" | "hard">;
 export interface TodayData {
   date: string; metrics: Metrics | null; sessions: Session[]; sync: SyncState[];
-  yesterday: SessionLite[]; tomorrow: SessionLite[]; activities: Activity[]; week_activities: Activity[]; targets: WeekTarget[];
+  yesterday: SessionLite[]; tomorrow: SessionLite[]; activities: Activity[]; week_activities: Activity[]; targets: WeekTarget[]; manual: ManualEntry[];
 }
-export interface WeekData { start: string; end: string; sessions: Session[]; activities: Activity[]; targets: WeekTarget[] }
+export interface WeekData { start: string; end: string; sessions: Session[]; activities: Activity[]; targets: WeekTarget[]; manual: ManualEntry[] }
 export interface OverviewData { races: Race[]; history: Partial<Metrics>[]; sync: SyncState[] }
 export interface SyncLogEntry { id?: number; started_at: string; finished_at: string | null; ok: number; message: string | null }
 export interface GarminStatus { connected: boolean; tokens_updated_at: string | null; login: SyncLogEntry | null; log: SyncLogEntry[] }
 
-export interface GymEntry { id: number; date: string; exercise: string; sets: number; reps: number; weight_kg: number | null; note: string | null }
+export type DayType = "push" | "pull" | "legs";
+export interface GymEntry { id: number; date: string; exercise: string; sets: number; reps: number; weight_kg: number | null; note: string | null; day_type?: DayType | null }
 export interface GymLast { exercise: string; date: string; sets: number; reps: number; weight_kg: number | null }
-export interface GymDay { date: string; exercises: number; sets: number; volume: number }
-export interface GymData { date: string; entries: GymEntry[]; exercises: GymLast[]; days: GymDay[] }
+export interface GymDay { date: string; day_type: DayType | null; exercises: number; sets: number; volume: number }
+export interface GymData { date: string; entries: GymEntry[]; exercises: GymLast[]; days: GymDay[]; templates: Record<DayType, string[]>; last_by_type: Record<DayType, string | null> }
 export type GymInput = Omit<GymEntry, "id" | "note"> & { note?: string | null };
 
 export type Tone = "good" | "warn" | "bad" | "info";
@@ -122,5 +125,9 @@ export const api = {
   coachAsk: (text: string, newThread = false) => (isDemo
     ? new Promise<{ ok: boolean; message?: string; messages?: CoachMsg[] }>((r) => setTimeout(() => r({ ok: false, message: "In den Beispieldaten antwortet der Coach nicht." }), 400))
     : post<{ messages: CoachMsg[] }>("/api/coach", { text, new_thread: newThread })),
+  moveSession: (id: number, date: string) => (isDemo ? Promise.resolve({ ok: true, message: undefined }) : post(`/api/session/${id}`, { date }, "PATCH")),
+  addManual: (category: string, date?: string) => (isDemo ? Promise.resolve({ ok: true, message: undefined }) : post("/api/manual", { category, date })),
+  deleteManual: (id: number) => (isDemo ? Promise.resolve({ ok: true, message: undefined }) : post(`/api/manual/${id}`, undefined, "DELETE")),
+  saveTemplate: (day_type: DayType, exercises: string[]) => (isDemo ? Promise.resolve({ ok: true, message: undefined }) : post("/api/gym/template", { day_type, exercises }, "PUT")),
   sendMfaCode: (code: string) => (isDemo ? Promise.resolve({ ok: true, message: undefined }) : post("/api/garmin/mfa", { code })),
 };

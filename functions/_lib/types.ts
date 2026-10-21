@@ -53,3 +53,8 @@ export function weekTargets(env: Env, monday: string) {
   return env.DB.prepare("SELECT category, target_min, target_max, note FROM week_targets WHERE week_start = ?")
     .bind(monday).all();
 }
+
+/** Von Hand abgehakte Einheiten (Mobility) zwischen zwei Tagen */
+export function manualBetween(env: Env, start: string, end: string) {
+  return env.DB.prepare("SELECT id, date, category FROM manual_sessions WHERE date BETWEEN ? AND ? ORDER BY date, id").bind(start, end).all();
+}

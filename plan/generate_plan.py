@@ -149,7 +149,14 @@ WEEKS = [
 ]
 
 
+MOBILITY = ("mobility", 2, 2, "Von Hand abhaken, Garmin zeichnet das nicht auf")
+
+
 def week_targets(week_no: int, phase: str | None, note: str | None) -> list[tuple[str, int, int, str | None]]:
+    return [*_week_targets(week_no, phase, note), MOBILITY]
+
+
+def _week_targets(week_no: int, phase: str | None, note: str | None) -> list[tuple[str, int, int, str | None]]:
     """Wochenziele für Gym, Schwimmen, Padel, Rad: (Kategorie, min, max, Hinweis)."""
     deload = note and "Entlastung" in note
     if week_no == 0:

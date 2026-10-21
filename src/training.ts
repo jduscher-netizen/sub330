@@ -1,4 +1,4 @@
-import type { Activity, Session, SessionLite, WeekTarget } from "./api";
+import type { Activity, ManualEntry, Session, SessionLite, WeekTarget } from "./api";
 import { hms } from "./format";
 
 // Gemeinsame Regeln für Plan und Heute: Läufe sind fest geplant, alles andere läuft über Wochenziele.
@@ -6,13 +6,14 @@ import { hms } from "./format";
 export const RUN_TYPES = ["intervals", "threshold", "long", "easy", "run", "race"];
 export const isRun = (type: string) => RUN_TYPES.includes(type);
 
-export const FLEX: Record<string, { label: string; sport: string; color: string }> = {
+export const FLEX: Record<string, { label: string; sport: string | null; color: string }> = {
   gym: { label: "Gym", sport: "strength", color: "var(--gym)" },
   swim: { label: "Schwimmen", sport: "swim", color: "var(--z1)" },
   padel: { label: "Padel", sport: "padel", color: "var(--z3)" },
   bike: { label: "Rad", sport: "bike", color: "var(--z2)" },
+  mobility: { label: "Mobility", sport: null, color: "var(--mobility)" }, // ohne Garmin, von Hand abgehakt
 };
-const FLEX_ORDER = ["gym", "swim", "padel", "bike"];
+const FLEX_ORDER = ["gym", "swim", "padel", "mobility", "bike"];
 
 const SPORT: Record<string, { label: string; color: string }> = {
   run: { label: "Laufen", color: "var(--bib)" },
@@ -54,15 +55,22 @@ export function matchRuns(sessions: Session[], acts: Activity[]): { matched: Map
   return { matched, rest: acts.filter((a) => !used.has(a.id)) };
 }
 
-export interface FlexProgress { key: string; label: string; color: string; done: number; min: number; max: number; note: string | null; acts: Activity[] }
+export interface FlexProgress {
+  key: string; label: string; color: string; done: number; min: number; max: number; note: string | null; acts: Activity[];
+  manual: ManualEntry[] | null; // gesetzt bei Einheiten, die von Hand abgehakt werden
+}
 
-export function flexProgress(targets: WeekTarget[], acts: Activity[]): FlexProgress[] {
-  return FLEX_ORDER.flatMap((key) => {
+export function flexProgress(targets: WeekTarget[], acts: Activity[], manual: ManualEntry[] = []): FlexProgress[] {
+  return FLEX_ORDER.flatMap((key): FlexProgress[] => {
     const t = targets.find((x) => x.category === key);
     if (!t) return [];
     const f = FLEX[key];
+    if (f.sport === null) {
+      const ticks = manual.filter((m) => m.category === key);
+      return [{ key, label: f.label, color: f.color, done: ticks.length, min: t.target_min, max: t.target_max, note: t.note, acts: [], manual: ticks }];
+    }
     const mine = acts.filter((a) => a.sport === f.sport);
-    return [{ key, label: f.label, color: f.color, done: mine.length, min: t.target_min, max: t.target_max, note: t.note, acts: mine }];
+    return [{ key, label: f.label, color: f.color, done: mine.length, min: t.target_min, max: t.target_max, note: t.note, acts: mine, manual: null }];
   });
 }
 

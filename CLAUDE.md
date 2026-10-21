@@ -145,6 +145,7 @@ Farben (CSS-Variablen in `src/styles.css`, Namen aus historischen Gründen "asph
 | z4 | #FFA62B | Schwelle |
 | z5 | #FF4D6D | VO2max |
 | gym | #A9B8CC | Kraft |
+| mobility | #C4A7FF | Mobility (Wochenziel) |
 
 Schrift: Big Shoulders Display (Zahlen, Titel, Startnummer), Archivo (alle UI-Texte). Beide von Google Fonts.
 
@@ -191,8 +192,24 @@ Regeln:
 - Laufanalyse (wie bei SUB4, Garmin, Strava): Der Sync holt für Läufe und Rad zusätzlich Runden (`get_activity_splits`) und den Verlauf (`get_activity_details`, auf etwa 400 Punkte verdichtet) einmal je Aktivität, dazu Kadenz, Höhenmeter, Trainingseffekt usw. in `details_json` (Migration 0008). Aktivitätsfenster jetzt 7 Tage. Auswertung in `functions/_lib/analysis.ts`: Plan-Abgleich je Einheitstyp (locker: Anteil Z1 bis Z2; Intervalle: Z5-Zeit, erkannte Belastungen, Nachlassen; Schwelle/HM-Tempo: Z4-Zeit, Pace gegen 4:38/km; Long Run: Entkopplung), Urteil erfüllt/teilweise/verfehlt. Detailansicht `#/aktivitaet/<id>` (`src/screens/Activity.tsx`) mit Puls- und Pace-Verlauf, Zonen, Belastungen, Splits; erreichbar aus Plan, Heute und den Wochenziel-Kacheln.
 - KI-Coach (`#/coach`, `src/screens/Coach.tsx`, `functions/api/coach.ts`, `functions/_lib/coach.ts`): Claude `claude-opus-5-5` mit `@anthropic-ai/sdk` in Pages Functions, Effort medium, `fallbacks: "default"` (Beta `server-side-fallback-2026-07-01`), gecachter Systemprompt mit Athletenprofil und Regeln. Nur lesende Werkzeuge: get_week, list_activities, analyze_activity, get_health, get_plan, get_gym_log. Gespräche in `coach_messages` unverändert gespeichert (inkl. Werkzeug-Aufrufe und Thinking-Blöcke, nur anhängen, nie nachträglich ändern). Pro Lauf zusätzlich "Einschätzung vom Coach" (Effort low), gespeichert in `activities.ai_comment`.
 - Secret `ANTHROPIC_API_KEY` (GitHub, per Deploy als Pages-Secret). Ohne Schlüssel zeigen Coach und Einschätzung einen Hinweis. Lokal testbar gegen einen API-Nachbau über `ANTHROPIC_BASE_URL` in `.dev.vars`.
+- Mobility (seit 21.10.2026): Wochenziel 2x in `week_targets` (Migration 0009, auch im Generator), ohne Garmin. Abhaken in der Mobility-Kachel (`manual_sessions`, `POST /api/manual`, `DELETE /api/manual/:id`).
+- Läufe verschieben: Knopf "Verschieben" bzw. "Nachholen" an jedem offenen Lauf im Plan und auf Heute, Blatt mit den nächsten 14 Tagen und Warnungen nach den Planregeln (`src/components/MoveSheet.tsx`, `PATCH /api/session/:id`, ursprünglicher Tag in `planned_sessions.moved_from`).
+- Gym-Tage Push, Pull, Legs (`gym_templates`, `gym_entries.day_type`): Tag wählen (der am längsten nicht trainierte ist "dran"), dann Übungen in fester Reihenfolge mit den Werten vom letzten Mal, die nächste offene Übung ist aufgeklappt, "Erledigt" springt weiter. Neue Übungen hängen sich an die Vorlage, Reihenfolge per "Reihenfolge und Übungen bearbeiten" (`PUT /api/gym/template`).
 - Historie wird nicht nachgeladen, die App sammelt ab dem ersten Sync (Wunsch von Jan). Falls doch nötig: "Garmin-Sync" manuell mit Eingabe `days` (maximal 120).
 - Nächster Schritt 3: Heute-Screen mit echten Daten prüfen und verfeinern.
+
+## Offene Punkte (Stand 21.10.2026)
+
+Von Jan gemerkt, in dieser Reihenfolge abarbeiten, sobald er sagt "weiter mit den offenen Punkten":
+
+- [ ] KI-Coach freischalten: Jan legt `ANTHROPIC_API_KEY` als GitHub-Secret an und startet Deploy; danach erste echte Antworten und eine Lauf-Einschätzung gemeinsam prüfen
+- [ ] Erste echte Laufanalyse prüfen: kommen Runden, Verlauf, Kadenz und Trainingseffekt von Garmin wie erwartet an (`laps_json`, `stream_json`, `details_json`)? Urteile plausibel?
+- [ ] Heute-Screen mit echten Garmin-Daten prüfen und verfeinern (Schritt 3)
+- [ ] Navigation unten auf dem iPhone 17 Pro Max bestätigen lassen (Höhe)
+- [ ] Waage: Modell erfragen und prüfen, ob sie zu Garmin Connect exportieren kann; sonst bleibt die Eingabe im Verlauf
+- [ ] Schritt 5: Matching geplant zu absolviert mit manueller Korrektur (bisher nur Anzeige-Zuordnung am selben Tag)
+- [ ] Schritt 6 Rest: "Tag fällt aus" mit Wochenvorschlag (einzelne Läufe verschieben geht seit 21.10.)
+- [ ] Erinnerung: `GH_ACTIONS_TOKEN` läuft im Oktober 2027 ab (Sync-Protokoll zeigt dann Fehler)
 
 ## Arbeitsweise
 

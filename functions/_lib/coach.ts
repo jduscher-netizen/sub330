@@ -24,7 +24,7 @@ Ziele 2027:
 
 Plan und Woche:
 - Laufen fest nach Tagen: Dienstag Schwelle bzw. HM-Tempo, Donnerstag VO2max-Intervalle, Freitag locker, Sonntag Long Run. 30 Wochen ab 26.10.2026, Phasen Grundlage, Aufbau, Spezifisch, Tapering.
-- Gym, Schwimmen, Padel und Rad nur als Wochenziel (Gym 3 bis 4 mal, Schwimmen 1 bis 2 mal, Padel 1 mal, Rad optional nur Z2). Jan entscheidet täglich.
+- Gym, Schwimmen, Padel, Mobility und Rad nur als Wochenziel (Gym 3 bis 4 mal im Wechsel Push, Pull, Legs; Schwimmen 1 bis 2 mal, Padel 1 mal, Mobility 2 mal, Rad optional nur Z2). Jan entscheidet täglich. Mobility zeichnet Garmin nicht auf, Jan hakt sie in der App ab.
 - Regeln: nie zwei harte Tage hintereinander (Intervalle, Schwelle, Long Run, Padel, Bein-Gym zählen als hart), kein Bein-Gym am Tag vor Intervallen oder Long Run, Long Run hat Vorrang vor Tempo, Tempo vor lockerem Lauf, Wochenumfang nie mehr als 10 % über Plan.
 
 Arbeitsweise:
@@ -91,7 +91,7 @@ export const TOOLS: Anthropic.Beta.BetaTool[] = [
   },
   {
     name: "get_gym_log",
-    description: "Einträge aus dem Gym-Tagebuch (Übung, Sätze, Wiederholungen, Gewicht) im Zeitraum, höchstens 92 Tage.",
+    description: "Einträge aus dem Gym-Tagebuch (Gym-Tag push/pull/legs, Übung, Sätze, Wiederholungen, Gewicht) im Zeitraum, höchstens 92 Tage.",
     input_schema: {
       type: "object",
       properties: { from: { type: "string", description: "YYYY-MM-DD, Standard 28 Tage zurück" }, to: { type: "string", description: "YYYY-MM-DD, Standard heute" } },
@@ -184,7 +184,7 @@ export async function runTool(env: Env, name: string, input: Input): Promise<unk
     case "get_gym_log": {
       const [from, to] = range(input, 28, 92);
       const rows = await env.DB.prepare(
-        "SELECT date, exercise, sets, reps, weight_kg FROM gym_entries WHERE date BETWEEN ? AND ? ORDER BY date, id LIMIT 400",
+        "SELECT date, day_type, exercise, sets, reps, weight_kg FROM gym_entries WHERE date BETWEEN ? AND ? ORDER BY date, id LIMIT 400",
       ).bind(from, to).all();
       return { from, to, entries: rows.results };
     }

@@ -5,6 +5,7 @@ import { Loading, Problem, SyncPill } from "../components/ui";
 import { longDate, weeksUntil } from "../format";
 import { sessionColor, shoeFor, ZONE_HEIGHT, ZONES } from "../zones";
 import { FlexTiles } from "../components/FlexTiles";
+import { MoveSheet } from "../components/MoveSheet";
 import { activityFacts, activityHref, flexProgress, isRun, sportInfo, todayAdvice } from "../training";
 
 const HM_DATE = "2027-05-23";
@@ -36,7 +37,7 @@ export function Today() {
   const main = sessions.find((s) => isRun(s.type)) ?? sessions.find((s) => s.type !== "rest");
   const runDone = main && isRun(main.type) ? activities.find((a) => a.sport === "run") : undefined;
   const advice = todayAdvice(sessions, yesterday, tomorrow);
-  const flex = flexProgress(targets, week_activities);
+  const flex = flexProgress(targets, week_activities, res.data.manual ?? []);
   const later = sessions.filter((s) => s !== main);
   const score = metrics?.readiness_score ?? null;
   const hardToday = sessions.some((s) => s.hard === 1);
@@ -78,7 +79,7 @@ export function Today() {
         </div>
       )}
 
-      {main ? <MainSession s={main} done={!!runDone} /> : (
+      {main ? <MainSession s={main} done={!!runDone} onMoved={load} /> : (
         <section className="section ruled">
           <h2 className="session-title">Kein Lauf heute</h2>
           <p className="session-desc" style={{ margin: 0 }}>{advice.text}</p>
@@ -111,7 +112,7 @@ export function Today() {
         <section className="section" aria-label="Diese Woche frei einteilen">
           <h2>Diese Woche frei einteilen</h2>
           {main && <p className="sub" style={{ margin: 0 }}>{advice.text}</p>}
-          <FlexTiles items={flex} />
+          <FlexTiles items={flex} onChanged={load} />
         </section>
       )}
 
@@ -133,7 +134,8 @@ export function Today() {
   );
 }
 
-function MainSession({ s, done }: { s: Session; done: boolean }) {
+function MainSession({ s, done, onMoved }: { s: Session; done: boolean; onMoved: () => void }) {
+  const [moving, setMoving] = useState(false);
   const total = s.structure?.reduce((a, b) => a + b.min, 0) ?? 0;
   const shoe = shoeFor(s.type);
   return (
@@ -156,7 +158,8 @@ function MainSession({ s, done }: { s: Session; done: boolean }) {
       </div>
       <div className="actions">
         <button type="button" className="btn btn-primary" disabled title="Kommt mit dem Garmin-Sync">Auf die Uhr senden</button>
-        <a className="btn btn-ghost" href={`${location.search}#/plan`}>Verschieben</a>
+        {!done && isRun(s.type) && <button type="button" className="btn btn-ghost" onClick={() => setMoving(true)}>Verschieben</button>}
+        {moving && <MoveSheet session={s} onClose={() => setMoving(false)} onMoved={() => { setMoving(false); onMoved(); }} />}
       </div>
     </section>
   );

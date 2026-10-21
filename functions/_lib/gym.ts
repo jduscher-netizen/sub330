@@ -2,7 +2,20 @@ import { isIsoDate, todayBerlin } from "./types";
 
 // Prüfung der Tagebuch-Eingaben, gemeinsam für Anlegen und Ändern.
 
-export interface EntryInput { date?: unknown; exercise?: unknown; sets?: unknown; reps?: unknown; weight_kg?: unknown; note?: unknown }
+export interface EntryInput { date?: unknown; exercise?: unknown; sets?: unknown; reps?: unknown; weight_kg?: unknown; note?: unknown; day_type?: unknown }
+
+export const DAY_TYPES = ["push", "pull", "legs"] as const;
+export type DayType = (typeof DAY_TYPES)[number];
+export const dayType = (v: unknown): DayType | null => (DAY_TYPES as readonly unknown[]).includes(v) ? (v as DayType) : null;
+
+/** Übung ans Ende der Vorlage hängen, falls sie dort noch fehlt */
+export function addToTemplate(db: D1Database, type: DayType, exercise: string) {
+  return db.prepare(
+    `INSERT INTO gym_templates (day_type, exercise, ord)
+     SELECT ?, ?, (SELECT COALESCE(MAX(ord), 0) + 1 FROM gym_templates WHERE day_type = ?)
+     WHERE NOT EXISTS (SELECT 1 FROM gym_templates WHERE day_type = ? AND exercise = ? COLLATE NOCASE)`,
+  ).bind(type, exercise, type, type, exercise);
+}
 
 /** Prüft eine Eingabe und liefert die Werte oder eine verständliche Meldung */
 export function parseEntry(body: EntryInput): { ok: true; v: [string, string, number, number, number | null, string | null] } | { ok: false; message: string } {

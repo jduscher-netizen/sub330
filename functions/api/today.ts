@@ -1,4 +1,4 @@
-import { activitiesBetween, addDays, isIsoDate, json, mondayOf, todayBerlin, weekTargets, type Env } from "../_lib/types";
+import { activitiesBetween, addDays, isIsoDate, json, manualBetween, mondayOf, todayBerlin, weekTargets, type Env } from "../_lib/types";
 
 // Alles für den Heute-Screen in einem Aufruf.
 export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
@@ -6,7 +6,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   const date = isIsoDate(q) ? q : todayBerlin();
 
   const monday = mondayOf(date);
-  const [metrics, sessions, around, weekActs, targets, sync] = await Promise.all([
+  const [metrics, sessions, around, weekActs, targets, manual, sync] = await Promise.all([
     // Zeilen nur mit Gewicht (von Hand eingetragen) zählen nicht als Tageswerte von Garmin
     env.DB.prepare(
       "SELECT * FROM daily_metrics WHERE date <= ? AND (readiness_score IS NOT NULL OR resting_hr IS NOT NULL OR hrv_last_night IS NOT NULL) ORDER BY date DESC LIMIT 1",
@@ -17,6 +17,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
       .bind(addDays(date, -1), addDays(date, 1)).all(),
     activitiesBetween(env, monday, addDays(monday, 6)),
     weekTargets(env, monday),
+    manualBetween(env, monday, addDays(monday, 6)),
     lastSync(env),
   ]);
 
@@ -29,6 +30,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     activities: weekActs.results.filter((a) => String(a.start_time).slice(0, 10) === date),
     week_activities: weekActs.results,
     targets: targets.results,
+    manual: manual.results,
     sync,
   });
 };

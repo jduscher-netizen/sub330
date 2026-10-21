@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { shortWeekday, dayOfMonth } from "../format";
+import { api } from "../api";
+import { dayOfMonth, shortWeekday, todayIso } from "../format";
 import { activityFacts, activityHref, flexGoal, flexReached, type FlexProgress } from "../training";
 
 const R = 22;
@@ -28,8 +29,23 @@ function Ring({ f }: { f: FlexProgress }) {
 }
 
 /** Wochenziele ohne festen Tag als Kacheln; Antippen zeigt, wann was erledigt wurde. */
-export function FlexTiles({ items }: { items: FlexProgress[] }) {
+export function FlexTiles({ items, onChanged }: { items: FlexProgress[]; onChanged?: () => void }) {
   const [open, setOpen] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function tick(category: string) {
+    setBusy(true); setError(null);
+    const r = await api.addManual(category, todayIso());
+    setBusy(false);
+    if (r.ok) onChanged?.(); else setError(r.message ?? "Nicht gespeichert.");
+  }
+  async function untick(id: number) {
+    setBusy(true); setError(null);
+    const r = await api.deleteManual(id);
+    setBusy(false);
+    if (r.ok) onChanged?.(); else setError(r.message ?? "Nicht gelöscht.");
+  }
   const sel = items.find((f) => f.key === open);
   return (
     <div className="ftiles-wrap">
@@ -48,7 +64,22 @@ export function FlexTiles({ items }: { items: FlexProgress[] }) {
       </div>
       {sel && (
         <div className="ftile-detail" aria-live="polite">
-          {sel.acts.length === 0 ? (
+          {sel.manual ? (
+            <>
+              {sel.manual.length === 0 && <span className="muted">{sel.label}: diese Woche noch nichts abgehakt.</span>}
+              {sel.manual.map((m) => (
+                <div key={m.id} className="ftile-act">
+                  <span className="ftile-day">{shortWeekday(m.date)} {dayOfMonth(m.date)}.</span>
+                  <span className="grow">{sel.label} erledigt</span>
+                  <button type="button" className="link-btn" style={{ padding: "0 4px" }} onClick={() => untick(m.id)} disabled={busy} aria-label={`${sel.label} vom ${dayOfMonth(m.date)}. entfernen`}>Entfernen</button>
+                </div>
+              ))}
+              <button type="button" className="btn btn-accent-ghost" onClick={() => tick(sel.key)} disabled={busy}>
+                {busy ? "Speichert" : `${sel.label} heute erledigt`}
+              </button>
+              {error && <span role="alert" style={{ color: "var(--z5)", fontSize: 13 }}>{error}</span>}
+            </>
+          ) : sel.acts.length === 0 ? (
             <span className="muted">{sel.label}: diese Woche noch nichts.</span>
           ) : sel.acts.map((a) => (
             <a key={a.id} className="ftile-act" href={activityHref(a.id)}>
