@@ -166,6 +166,7 @@ section h2 small { font-family: var(--body); font-weight: 500; font-size: 13px; 
 .gate { min-height: calc(100vh - 140px); display: flex; flex-direction: column; justify-content: center; gap: 18px; max-width: 360px; margin: 0 auto; padding-top: 40px; }
 .gate h1 { font-family: var(--display); font-weight: 800; font-size: 40px; line-height: 1; margin: 0; }
 .gate p { margin: 0; color: var(--muted); }
+.pwfield { height: 50px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); padding: 0 12px; font-size: 17px; width: 100%; }
 .whobtn { min-height: 72px; border-radius: 16px; border: 1px solid var(--line); background: var(--surface); display: flex; align-items: center; gap: 14px; padding: 0 18px; font-size: 20px; font-weight: 600; }
 .whobtn .dot { width: 40px; height: 40px; font-size: 17px; }
 
@@ -182,8 +183,9 @@ section h2 small { font-family: var(--body); font-weight: 500; font-size: 13px; 
 <form class="gate" id="login" hidden autocomplete="on">
   <div class="brand"><span class="half">½</span>Haushaltskasse</div>
   <h1>Jan &amp; Milena</h1>
-  <p>Gemeinsame Ausgaben, halbe halbe.</p>
-  <label class="field"><span class="label">Passwort</span><input type="password" id="pw" autocomplete="current-password" style="height:50px;border-radius:12px;border:1px solid var(--line);background:var(--surface);padding:0 12px;font-size:17px"></label>
+  <p id="loginText">Gemeinsame Ausgaben, halbe halbe.</p>
+  <label class="field"><span class="label" id="pwLabel">Passwort</span><input type="password" id="pw" class="pwfield" autocomplete="current-password"></label>
+  <label class="field" id="pw2Wrap" hidden><span class="label">Passwort wiederholen</span><input type="password" id="pw2" class="pwfield" autocomplete="new-password"></label>
   <button class="btn primary" type="submit" id="loginBtn">Anmelden</button>
   <div class="msg" id="loginMsg" hidden></div>
 </form>
@@ -353,10 +355,16 @@ section h2 small { font-family: var(--body); font-weight: 500; font-size: 13px; 
     $('app').hidden = !app;
     $('dock').hidden = !app;
   }
+  let setupMode = false;
   async function showLogin(msg) {
     show('login');
-    let text = msg && msg !== 'Bitte anmelden.' ? msg : '';
-    try { const h = await (await fetch('/api/health')).json(); if (!h.passwordSet) text = 'Das Passwort ist noch nicht eingerichtet. Jan legt dafür in GitHub das Secret KASSE_PASSWORD an.'; } catch {}
+    let text = msg && msg !== 'Bitte anmelden.' && msg !== 'Bitte zuerst ein Passwort festlegen.' ? msg : '';
+    try { const h = await (await fetch('/api/health')).json(); setupMode = !h.passwordSet; } catch {}
+    $('pw2Wrap').hidden = !setupMode;
+    $('pw').autocomplete = setupMode ? 'new-password' : 'current-password';
+    $('pwLabel').textContent = setupMode ? 'Neues Passwort (mindestens 8 Zeichen)' : 'Passwort';
+    $('loginText').textContent = setupMode ? 'Einmalig: Legt euer gemeinsames Passwort fest. Danach meldet ihr euch beide damit an.' : 'Gemeinsame Ausgaben, halbe halbe.';
+    $('loginBtn').textContent = setupMode ? 'Passwort festlegen' : 'Anmelden';
     $('loginMsg').textContent = text; $('loginMsg').hidden = !text;
     setTimeout(() => $('pw').focus(), 50);
   }
@@ -535,9 +543,21 @@ section h2 small { font-family: var(--body); font-weight: 500; font-size: 13px; 
 
   $('login').onsubmit = async ev => {
     ev.preventDefault();
+    const pw = $('pw').value;
+    const err = t => { $('loginMsg').textContent = t; $('loginMsg').hidden = false; };
+    if (setupMode && pw.length < 8) return err('Das Passwort braucht mindestens 8 Zeichen.');
+    if (setupMode && pw !== $('pw2').value) return err('Die beiden Passwörter sind nicht gleich.');
     $('loginBtn').disabled = true; $('loginMsg').hidden = true;
-    try { await api('/login', { method: 'POST', body: { password: $('pw').value } }); $('pw').value = ''; await load(); }
-    catch (e) { $('loginMsg').textContent = e.message; $('loginMsg').hidden = false; }
+    try {
+      await api(setupMode ? '/setup' : '/login', { method: 'POST', body: { password: pw } });
+      $('pw').value = ''; $('pw2').value = '';
+      if (setupMode) toast('Passwort festgelegt');
+      setupMode = false;
+      await load();
+    } catch (e) {
+      if (/schon ein Passwort/.test(e.message)) { await showLogin(); }
+      err(e.message);
+    }
     finally { $('loginBtn').disabled = false; }
   };
 

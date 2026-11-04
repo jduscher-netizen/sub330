@@ -1,11 +1,11 @@
-import { createSessionCookie, passwordMatches } from "../_lib/session";
+import { createSessionCookie, isConfigured, passwordMatches } from "../_lib/session";
 import { fail, json, type Env } from "../_lib/util";
 
 const WINDOW_MIN = 15;
 const MAX_FAILS = 8;
 
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
-  if (!env.KASSE_PASSWORD) return fail("Das Passwort ist noch nicht eingerichtet.", 503);
+  if (!(await isConfigured(env))) return fail("Bitte zuerst ein Passwort festlegen.", 409);
 
   const ip = request.headers.get("CF-Connecting-IP") ?? "unbekannt";
   const fails = await env.DB.prepare(

@@ -70,7 +70,7 @@ jobs:
           KASSE_PASSWORD: ${{ secrets.KASSE_PASSWORD }}
         run: |
           if [ -z "${KASSE_PASSWORD}" ]; then
-            echo "::warning::GitHub-Secret KASSE_PASSWORD fehlt, die Kasse bleibt gesperrt."
+            echo "Kein GitHub-Secret KASSE_PASSWORD: Das Passwort wird beim ersten Öffnen in der App festgelegt."
           else
             printf '%s' "$KASSE_PASSWORD" | "$WRANGLER" pages secret put KASSE_PASSWORD --project-name haushaltskasse
           fi
