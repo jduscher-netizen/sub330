@@ -26,7 +26,7 @@ export const onRequestGet: PagesFunction<Env, "month"> = async ({ env, params })
               COUNT(*) AS n
          FROM entries WHERE deleted_at IS NULL GROUP BY month ORDER BY month DESC LIMIT 36`,
     ).all(),
-    env.DB.prepare("SELECT month, balance_cents, settled_at, settled_by FROM settlements ORDER BY month DESC LIMIT 36").all(),
+    env.DB.prepare("SELECT month, balance_cents, settled_at, settled_by, to_debt FROM settlements ORDER BY month DESC LIMIT 36").all(),
     env.DB.prepare(
       `SELECT label, category, COUNT(*) AS n, MAX(id) AS last_id
          FROM entries WHERE deleted_at IS NULL AND kind = 'expense'
