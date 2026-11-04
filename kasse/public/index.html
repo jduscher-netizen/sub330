@@ -212,13 +212,6 @@ button.row:active:not(:disabled) { background: var(--press); }
   -webkit-mask-image: linear-gradient(transparent, #000 60%); mask-image: linear-gradient(transparent, #000 60%); }
 .dock-in { max-width: 560px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .dock-in > * { pointer-events: auto; }
-.stepper { display: flex; align-items: center; height: 52px; border-radius: 999px; padding: 0 4px; }
-.stepper button { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; }
-.stepper button:disabled { opacity: .3; }
-.stepper button svg { width: 11px; height: 18px; }
-.stepper span { min-width: 92px; text-align: center; font-weight: 600; font-size: 15px; }
-.add { height: 52px; border-radius: 999px; padding: 0 22px 0 18px; display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 17px; }
-.add svg { width: 18px; height: 18px; }
 
 /* Blatt */
 .scrim { position: fixed; inset: 0; z-index: 50; background: rgba(0, 0, 0, .28); }
@@ -287,6 +280,40 @@ button.row:active:not(:disabled) { background: var(--press); }
 .whobtn .mono { width: 44px; height: 44px; font-size: 19px; }
 .whobtn .chev { margin-left: auto; }
 
+/* Titelzeile mit Monatswechsel */
+.titlerow { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.mnav { display: flex; gap: 8px; padding-bottom: 5px; flex: none; }
+.mnav button { width: 36px; height: 36px; border-radius: 50%; background: var(--fill); display: grid; place-items: center; }
+.mnav button:disabled { opacity: .3; }
+.mnav svg { width: 9px; height: 15px; }
+
+/* Tab-Leiste */
+.tabbar { display: flex; align-items: center; height: 62px; border-radius: 999px; padding: 4px; gap: 2px; }
+.tab { min-width: 104px; height: 54px; border-radius: 999px; padding: 0 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 11px; font-weight: 600; transition: background .3s, color .3s; }
+.tab svg { width: 24px; height: 24px; }
+.tab[aria-current="page"] { color: var(--tint-text); background: var(--fill); }
+.fab { width: 62px; height: 62px; border-radius: 50%; display: grid; place-items: center; }
+.fab svg { width: 22px; height: 22px; }
+
+/* Rückzahlung */
+.progress { height: 8px; border-radius: 4px; background: var(--fill); overflow: hidden; }
+.progress i { display: block; height: 100%; border-radius: 4px; background: var(--tint); min-width: 8px; }
+.kv { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--secondary); margin-top: -6px; }
+.sq { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; color: #fff; flex: none; font-family: var(--rounded); font-weight: 700; font-size: 16px; }
+.sq svg { width: 18px; height: 18px; }
+.sq.miete { background: #5856D6; } .sq.monat { background: var(--orange); } .sq.urlaub { background: #30B0C7; }
+.sq.geliehen { background: #AF52DE; } .sq.sonstiges { background: #8E8E93; } .sq.rueckzahlung { background: var(--tint); }
+.list.icons .row + .row::before { left: 58px; }
+.minus { color: var(--tint-text); }
+.row.total { font-weight: 600; }
+.row.total .row-amt { font-weight: 700; }
+.linkrow { justify-content: center; color: var(--tint-text); min-height: 50px; }
+.foot-note { color: var(--secondary); font-size: 13px; padding: 8px 16px 0; line-height: 1.4; }
+.sheet .lead { margin: 0; text-align: center; color: var(--secondary); font-size: 15px; line-height: 1.4; padding: 0 8px; }
+.frow input[type=month] { margin-left: auto; border: 0; border-radius: 8px; background: var(--fill); padding: 6px 10px; min-height: 34px; font-size: 17px; color: var(--label); }
+.choice { display: flex; flex-direction: column; gap: 10px; }
+.choice .linkbtn { color: var(--secondary); font-size: 15px; min-height: 40px; }
+
 @media (prefers-reduced-motion: no-preference) {
   .sheet:not([hidden]) { animation: sheetIn .5s var(--ease); }
   .scrim:not([hidden]) { animation: fade .3s ease-out; }
@@ -298,7 +325,7 @@ button.row:active:not(:disabled) { background: var(--press); }
   @keyframes drop { from { opacity: 0; transform: translate(-50%, -18px) scale(.9); } to { opacity: 1; transform: translateX(-50%); } }
 }
 @media (prefers-reduced-motion: reduce) { .press:active { transform: none; } * { transition: none !important; } }
-@media (max-width: 360px) { .amount { font-size: 48px; } .stepper span { min-width: 76px; } .add { padding: 0 16px 0 14px; } }
+@media (max-width: 360px) { .amount { font-size: 48px; } .tab { min-width: 88px; padding: 0 10px; } }
 </style>
 </head>
 <body>
@@ -344,7 +371,13 @@ button.row:active:not(:disabled) { background: var(--press); }
 
 <main class="page" id="app" hidden>
   <div class="large" id="large">
-    <h1 id="title"></h1>
+    <div class="titlerow">
+      <h1 id="title"></h1>
+      <div class="mnav">
+        <button class="press" id="prev" type="button" aria-label="Vorheriger Monat"><svg viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 1.5l-6 6 6 6"/></svg></button>
+        <button class="press" id="next" type="button" aria-label="Nächster Monat"><svg viewBox="0 0 9 15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 1.5l6 6-6 6"/></svg></button>
+      </div>
+    </div>
     <p id="subtitle"></p>
   </div>
 
@@ -376,16 +409,86 @@ button.row:active:not(:disabled) { background: var(--press); }
   <div class="foot" id="status"></div>
 </main>
 
+<!-- Rückzahlung -->
+<main class="page" id="debtView" hidden>
+  <div class="large" id="dLarge">
+    <h1>Rückzahlung</h1>
+    <p id="dSubtitle">Was Milena Jan neben den Monaten zurückzahlt</p>
+  </div>
+  <div class="cell hero" id="dHero"></div>
+  <section>
+    <div class="sec-h"><h2>Aufschlüsselung</h2></div>
+    <div class="cell list icons" id="dBreak"></div>
+  </section>
+  <section>
+    <div class="sec-h"><h2>Miete</h2><small>Bibrastraße 3</small></div>
+    <div class="cell list plain" id="dRent"></div>
+    <div class="foot-note">Jan zahlt mehr Miete als Milena. Milena übernimmt die Hälfte dieser Mehrkosten. Der Betrag kommt am 1. jedes Monats automatisch dazu.</div>
+  </section>
+  <section>
+    <div class="sec-h"><h2>Verlauf</h2></div>
+    <div class="cell list icons" id="dList"></div>
+  </section>
+  <div class="foot" id="dStatus"></div>
+</main>
+
 <nav class="dock" id="dock" hidden>
   <div class="dock-in">
-    <div class="stepper glass">
-      <button class="press" id="prev" type="button" aria-label="Vorheriger Monat"><svg viewBox="0 0 11 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2L2 9l7 7"/></svg></button>
-      <span id="monthLabel"></span>
-      <button class="press" id="next" type="button" aria-label="Nächster Monat"><svg viewBox="0 0 11 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2l7 7-7 7"/></svg></button>
+    <div class="tabbar glass" role="tablist">
+      <button class="tab press" type="button" data-view="kasse" role="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9.5 8h5M9.5 12h5"/></svg>Kasse</button>
+      <button class="tab press" type="button" data-view="debt" role="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>Rückzahlung</button>
     </div>
-    <button class="add glass tinted press" type="button" id="addBtn"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M9 2v14M2 9h14"/></svg>Ausgabe</button>
+    <button class="fab glass tinted press" type="button" id="addBtn" aria-label="Ausgabe eintragen"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M9 2v14M2 9h14"/></svg></button>
   </div>
 </nav>
+
+<!-- Blatt: Posten der Rückzahlung -->
+<form class="sheet glass" id="dsheet" hidden autocomplete="off" novalidate>
+  <div class="grabber"></div>
+  <div class="sheet-h">
+    <button type="button" class="circle press" data-close aria-label="Schließen"><svg viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M1.5 1.5l10 10M11.5 1.5l-10 10"/></svg></button>
+    <h3 id="dTitle">Rückzahlung</h3>
+  </div>
+  <div class="seg big" id="dKind" style="--n:2">
+    <span class="thumb"></span>
+    <button type="button" id="dRep" aria-pressed="true">Rückzahlung</button>
+    <button type="button" id="dDebt" aria-pressed="false">Schulden dazu</button>
+  </div>
+  <label class="amountwrap"><input id="dAmount" class="amt-in" inputmode="decimal" placeholder="0,00" aria-label="Betrag in Euro"><span class="c">€</span></label>
+  <div class="group">
+    <label class="frow"><span>Wofür</span><input id="dLabel" maxlength="80" placeholder="z. B. Überweisung" autocapitalize="sentences"></label>
+  </div>
+  <div id="dCatField">
+    <div class="glabel">Kategorie</div>
+    <div class="chips wrap" id="dCats"></div>
+  </div>
+  <div class="group">
+    <label class="frow"><span>Datum</span><input type="date" id="dDate"></label>
+  </div>
+  <div class="msg" id="dMsg" hidden></div>
+  <button class="btn prominent press" type="submit" id="dSave">Eintragen</button>
+  <div class="group" id="dEditBtns" hidden>
+    <button class="rbtn danger" type="button" id="dDel">Löschen</button>
+  </div>
+</form>
+
+<!-- Blatt: Miete ändern -->
+<form class="sheet glass" id="rsheet" hidden autocomplete="off" novalidate>
+  <div class="grabber"></div>
+  <div class="sheet-h">
+    <button type="button" class="circle press" data-close aria-label="Schließen"><svg viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M1.5 1.5l10 10M11.5 1.5l-10 10"/></svg></button>
+    <h3>Mehrkosten Miete</h3>
+  </div>
+  <p class="lead">Wie viel zahlt Jan pro Monat mehr Miete als Milena? Milena übernimmt davon die Hälfte.</p>
+  <label class="amountwrap"><input id="rAmount" class="amt-in" inputmode="decimal" placeholder="0,00" aria-label="Mehrkosten pro Monat in Euro"><span class="c">€</span></label>
+  <p class="lead" id="rHalf"></p>
+  <div class="group">
+    <label class="frow"><span>Ab Monat</span><input type="month" id="rFrom"></label>
+  </div>
+  <p class="lead">0 € beendet die Miete ab diesem Monat. Frühere Monate bleiben, wie sie sind.</p>
+  <div class="msg" id="rMsg" hidden></div>
+  <button class="btn prominent press" type="submit" id="rSave">Speichern</button>
+</form>
 
 <!-- Blatt zum Eintragen und Ändern -->
 <div class="scrim" id="scrim" hidden></div>
@@ -401,7 +504,6 @@ button.row:active:not(:disabled) { background: var(--press); }
     <button type="button" id="sPay" aria-pressed="false">Ausgleichszahlung</button>
   </div>
   <label class="amountwrap"><input id="sAmount" inputmode="decimal" placeholder="0,00" aria-label="Betrag in Euro" enterkeyhint="next"><span class="c">€</span></label>
-  <span class="measure" id="measure" aria-hidden="true"></span>
   <div class="group">
     <label class="frow"><span id="sLabelHint">Wofür</span><input id="sLabel" maxlength="60" placeholder="z. B. Edeka" autocapitalize="sentences" enterkeyhint="done"></label>
   </div>
@@ -432,6 +534,7 @@ button.row:active:not(:disabled) { background: var(--press); }
 </form>
 
 <div class="toast glass" id="toast" role="status" hidden></div>
+<span class="measure" id="measure" aria-hidden="true"></span>
 
 <script>
 (() => {
@@ -459,6 +562,17 @@ button.row:active:not(:disabled) { background: var(--press); }
     swap: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h15l-4-4M20 16H5l4 4"/></svg>',
     dot: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/></svg>'
   };
+  const DCATS = { miete: 'Miete', monat: 'Monatsausgleiche', urlaub: 'Urlaub & Reisen', geliehen: 'Geliehen', sonstiges: 'Sonstiges' };
+  const DCAT_PICK = { geliehen: 'Geliehen', urlaub: 'Urlaub & Reisen', monat: 'Monatsausgleich', sonstiges: 'Sonstiges' };
+  const SQ = {
+    miete: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.5 11.2L12 4l8.5 7.2V20a1 1 0 0 1-1 1H15v-6H9v6H4.5a1 1 0 0 1-1-1z"/></svg>',
+    monat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M8.5 3v4M15.5 3v4"/></svg>',
+    urlaub: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 15.5v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0v5l-8 5v2l8-2.5V18l-2 1.5V21l3.5-1 3.5 1v-1.5L11 18v-5z" transform="translate(1.5 0)"/></svg>',
+    geliehen: '€',
+    sonstiges: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="6" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="18" cy="12" r="2"/></svg>',
+    rueckzahlung: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>'
+  };
+  const sq = c => '<span class="sq ' + c + '">' + (SQ[c] || SQ.sonstiges) + '</span>';
 
   const $ = id => document.getElementById(id);
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -483,7 +597,8 @@ button.row:active:not(:disabled) { background: var(--press); }
   const state = {
     me: ['J', 'M'].includes(ls.get('kasse.me')) ? ls.get('kasse.me') : null,
     month: isMonth(location.hash.slice(1)) ? location.hash.slice(1) : localToday().slice(0, 7),
-    data: null, filter: 'all', confirmSettle: false, sheet: null, error: ''
+    data: null, filter: 'all', confirmSettle: false, sheet: null, error: '',
+    view: location.hash === '#rueckzahlung' ? 'debt' : 'kasse', debt: null, dsheet: null, debtError: ''
   };
   const today = () => state.data?.today || localToday();
   const curMonth = () => today().slice(0, 7);
@@ -510,10 +625,17 @@ button.row:active:not(:disabled) { background: var(--press); }
       if (token !== loading) return;
       state.data = d; state.error = '';
       show('app'); render();
+      if (state.view === 'debt') loadDebt();
     } catch (e) {
       if (e instanceof AuthError) { showLogin(e.message); return; }
       state.error = e.message; render();
     }
+  }
+
+  async function loadDebt() {
+    try { state.debt = await api('/debt'); state.debtError = ''; }
+    catch (e) { if (e instanceof AuthError) { showLogin(e.message); return; } state.debtError = e.message; }
+    renderDebt();
   }
 
   // ---------- Ansichten ----------
@@ -521,7 +643,8 @@ button.row:active:not(:disabled) { background: var(--press); }
     const app = view === 'app' && !!state.me;
     $('login').hidden = view !== 'login';
     $('who').hidden = !(view === 'who' || (view === 'app' && !state.me));
-    $('app').hidden = !app; $('dock').hidden = !app; $('topbar').hidden = !app;
+    $('app').hidden = !app || state.view !== 'kasse'; $('debtView').hidden = !app || state.view !== 'debt';
+    $('dock').hidden = !app; $('topbar').hidden = !app;
     $('menu').hidden = true;
   }
   let setupMode = false;
@@ -566,8 +689,10 @@ button.row:active:not(:disabled) { background: var(--press); }
     $('chkJ').innerHTML = me === 'J' ? ICON.check : ''; $('chkM').innerHTML = me === 'M' ? ICON.check : '';
     $('chkJ').style.width = $('chkM').style.width = '18px';
     $('title').innerHTML = esc(monthName(m)) + ' <span>' + m.slice(0, 4) + '</span>';
-    $('compact').textContent = monthYear(m);
-    $('monthLabel').textContent = monthName(m);
+    $('compact').textContent = state.view === 'debt' ? 'Rückzahlung' : monthYear(m);
+    document.querySelectorAll('[data-view]').forEach(b => b.toggleAttribute('aria-current', b.dataset.view === state.view));
+    document.querySelectorAll('[data-view][aria-current]').forEach(b => b.setAttribute('aria-current', 'page'));
+    $('addBtn').setAttribute('aria-label', state.view === 'debt' ? 'Rückzahlung eintragen' : 'Ausgabe eintragen');
     $('next').disabled = m >= curMonth();
     $('status').textContent = state.error || (d ? 'Aktualisiert um ' + new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : 'Lade …');
     if (!d) return;
@@ -612,12 +737,18 @@ button.row:active:not(:disabled) { background: var(--press); }
       if (parts.length) h += '<p class="note num">' + esc(parts.join('. ')) + '.</p>';
       if (settled) {
         const when = new Date(settled.settled_at.replace(' ', 'T') + 'Z').toLocaleDateString('de-DE', { day: 'numeric', month: 'long' });
-        h += '<div class="seal">' + ICON.checkCircle + '<span>Ausgeglichen am ' + esc(when) + '</span><button type="button" data-act="reopen">Öffnen</button></div>';
+        h += '<div class="seal">' + ICON.checkCircle + '<span>' + (settled.to_debt ? 'Auf Rückzahlung gebucht am ' : 'Ausgeglichen am ') + esc(when) + '</span><button type="button" data-act="reopen">Öffnen</button></div>';
       } else if (state.confirmSettle) {
         const debtor = r.bal > 0 ? 'M' : 'J';
-        const q = r.bal ? NAMES[debtor] + ' hat ' + NAMES[OTHER[debtor]] + ' ' + fmt(amount) + ' gezahlt?' : monthName(m) + ' abschließen?';
-        h += '<div class="ask">' + esc(q) + ' <span>Danach ist ' + esc(monthName(m)) + ' abgeschlossen.</span></div>'
-          + '<div class="btns"><button type="button" class="btn gray press" data-act="settle-no">Abbrechen</button><button type="button" class="btn prominent press" data-act="settle-yes">Ja, ausgeglichen</button></div>';
+        if (r.bal) {
+          h += '<div class="ask">Wie wird ' + esc(monthName(m)) + ' ausgeglichen? <span>' + esc(NAMES[debtor] + ' zahlt ' + NAMES[OTHER[debtor]] + ' ' + fmt(amount) + '.') + '</span></div>'
+            + '<div class="choice"><button type="button" class="btn prominent press" data-act="settle-yes">Überwiesen</button>'
+            + '<button type="button" class="btn gray press" data-act="settle-yes" data-debt="1">Auf Rückzahlung buchen</button>'
+            + '<button type="button" class="linkbtn" data-act="settle-no">Abbrechen</button></div>';
+        } else {
+          h += '<div class="ask">' + esc(monthName(m)) + ' abschließen? <span>Ihr seid quitt.</span></div>'
+            + '<div class="btns"><button type="button" class="btn gray press" data-act="settle-no">Abbrechen</button><button type="button" class="btn prominent press" data-act="settle-yes">Abschließen</button></div>';
+        }
       } else if (m < curMonth() || r.total) {
         h += '<button type="button" class="btn ' + (m < curMonth() ? 'prominent' : 'gray') + ' press" data-act="settle">' + esc(monthName(m)) + ' ausgleichen</button>';
       }
@@ -669,7 +800,7 @@ button.row:active:not(:disabled) { background: var(--press); }
         + '<span class="mrow-r"><span class="num">' + fmt(x.total_j + x.total_m) + '</span><span class="state ' + (s ? 'done' : 'open') + '">' + (s ? ICON.check + 'Ausgeglichen' : 'Offen') + '</span></span>' + ICON.chev + '</button>';
     }).join('') : '<div class="empty">Sobald etwas eingetragen ist, stehen hier die Monate.</div>';
 
-    $('addBtn').hidden = !!settled;
+    $('addBtn').hidden = state.view === 'kasse' && !!settled;
   }
 
   // ---------- Hinweis ----------
@@ -681,11 +812,22 @@ button.row:active:not(:disabled) { background: var(--press); }
   }
 
   // ---------- Kopf beim Scrollen ----------
-  new IntersectionObserver(([e]) => $('topbar').classList.toggle('scrolled', !e.isIntersecting), { rootMargin: '-60px 0px 0px 0px' }).observe($('large'));
+  const titleObs = new IntersectionObserver(es => {
+    for (const e of es) if (!e.target.closest('[hidden]')) $('topbar').classList.toggle('scrolled', !e.isIntersecting);
+  }, { rootMargin: '-60px 0px 0px 0px' });
+  titleObs.observe($('large')); titleObs.observe($('dLarge'));
 
   // ---------- Navigation ----------
+  function setView(v) {
+    if (state.view === v) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+    state.view = v;
+    history.replaceState(null, '', v === 'debt' ? '#rueckzahlung' : '#' + state.month);
+    show('app'); render(); window.scrollTo({ top: 0 });
+    if (v === 'debt') { renderDebt(); loadDebt(); }
+  }
   function go(m) {
     if (m > curMonth()) return;
+    if (state.view !== 'kasse') { state.view = 'kasse'; show('app'); }
     state.month = m; state.confirmSettle = false; state.filter = 'all';
     history.replaceState(null, '', '#' + m);
     if (state.data) state.data = { ...state.data, entries: [], settlement: null };
@@ -693,11 +835,16 @@ button.row:active:not(:disabled) { background: var(--press); }
   }
   $('prev').onclick = () => go(addMonth(state.month, -1));
   $('next').onclick = () => go(addMonth(state.month, 1));
-  window.addEventListener('hashchange', () => { const h = location.hash.slice(1); if (isMonth(h) && h !== state.month) go(h); });
+  window.addEventListener('hashchange', () => {
+    const h = location.hash.slice(1);
+    if (h === 'rueckzahlung') setView('debt'); else if (isMonth(h) && (h !== state.month || state.view !== 'kasse')) go(h);
+  });
 
   document.addEventListener('click', async ev => {
     if (!$('menu').hidden && !ev.target.closest('#menu, #meBtn')) { $('menu').hidden = true; return; }
+    const v = ev.target.closest('[data-view]'); if (v) { setView(v.dataset.view); return; }
     const g = ev.target.closest('[data-goto]'); if (g) { go(g.dataset.goto); return; }
+    const dr = ev.target.closest('[data-debt-id]'); if (dr && !dr.disabled) { openDebt(state.debt.entries.find(e => String(e.id) === dr.dataset.debtId)); return; }
     const f = ev.target.closest('[data-filter]'); if (f) { state.filter = f.dataset.filter; render(); return; }
     const w = ev.target.closest('[data-me]');
     if (w) { state.me = w.dataset.me; ls.set('kasse.me', state.me); show('app'); render(); if (!state.data) load(); return; }
@@ -714,14 +861,21 @@ button.row:active:not(:disabled) { background: var(--press); }
         try { await navigator.clipboard.writeText(a.dataset.v); toast(a.dataset.v + ' € kopiert'); } catch { toast('Betrag: ' + a.dataset.v + ' €', false); }
         break;
       case 'settle': state.confirmSettle = true; render(); break;
+      case 'repay': openDebt(null, 'repayment'); break;
+      case 'rent': openRent(); break;
       case 'settle-no': state.confirmSettle = false; render(); break;
       case 'settle-yes':
         a.disabled = true;
-        try { await api('/settle/' + m, { method: 'PUT', body: { by: state.me } }); state.confirmSettle = false; toast(monthName(m) + ' ist ausgeglichen'); await load(); }
+        try {
+          const toDebt = a.dataset.debt === '1';
+          await api('/settle/' + m, { method: 'PUT', body: { by: state.me, toDebt } });
+          state.confirmSettle = false; state.debt = null;
+          toast(monthName(m) + (toDebt ? ' auf Rückzahlung gebucht' : ' ist ausgeglichen')); await load();
+        }
         catch (e) { a.disabled = false; handleErr(e); }
         break;
       case 'reopen':
-        try { await api('/settle/' + m, { method: 'DELETE' }); toast(monthName(m) + ' ist wieder offen'); await load(); }
+        try { await api('/settle/' + m, { method: 'DELETE' }); state.debt = null; toast(monthName(m) + ' ist wieder offen'); await load(); }
         catch (e) { handleErr(e); }
         break;
     }
@@ -768,12 +922,11 @@ button.row:active:not(:disabled) { background: var(--press); }
     return null;
   }
   // Betragsfeld wächst mit der Eingabe, damit Zahl und € mittig zusammenstehen
-  function sizeAmount() {
-    const v = $('sAmount').value || $('sAmount').placeholder;
-    $('measure').textContent = v;
-    $('sAmount').style.width = Math.ceil($('measure').getBoundingClientRect().width + 6) + 'px';
+  function sizeAmount(el = $('sAmount')) {
+    $('measure').textContent = el.value || el.placeholder;
+    el.style.width = Math.ceil($('measure').getBoundingClientRect().width + 6) + 'px';
   }
-  $('sAmount').addEventListener('input', sizeAmount);
+  ['sAmount', 'dAmount', 'rAmount'].forEach(id => $(id).addEventListener('input', () => sizeAmount($(id))));
 
   function openSheet(entry) {
     state.sheet = entry
@@ -791,7 +944,12 @@ button.row:active:not(:disabled) { background: var(--press); }
     sizeAmount();
     if (!entry) setTimeout(() => $('sAmount').focus(), 80);
   }
-  function closeSheet() { state.sheet = null; $('scrim').hidden = true; $('sheet').hidden = true; }
+  function closeSheet() {
+    state.sheet = null; state.dsheet = null;
+    $('scrim').hidden = true; $('sheet').hidden = true; $('dsheet').hidden = true; $('rsheet').hidden = true;
+  }
+  const anySheet = () => !!state.sheet || !!state.dsheet || !$('rsheet').hidden;
+  document.querySelectorAll('[data-close]').forEach(b => b.onclick = closeSheet);
 
   function renderSheet() {
     const s = state.sheet; if (!s) return;
@@ -824,12 +982,12 @@ button.row:active:not(:disabled) { background: var(--press); }
   }
   const setMsg = t => { $('sMsg').textContent = t || ''; $('sMsg').hidden = !t; };
 
-  $('addBtn').onclick = () => openSheet(null);
+  $('addBtn').onclick = () => state.view === 'debt' ? openDebt(null, 'repayment') : openSheet(null);
   $('sClose').onclick = closeSheet;
   $('scrim').onclick = closeSheet;
   document.addEventListener('keydown', ev => {
     if (ev.key !== 'Escape') return;
-    if (state.sheet) closeSheet(); else $('menu').hidden = true;
+    if (anySheet()) closeSheet(); else $('menu').hidden = true;
   });
   $('sExp').onclick = () => { state.sheet.kind = 'expense'; renderSheet(); };
   $('sPay').onclick = () => {
@@ -894,10 +1052,155 @@ button.row:active:not(:disabled) { background: var(--press); }
     catch (e) { setMsg(e.message); }
   };
 
+  // ---------- Rückzahlung ----------
+  const shortMonth = m => { const [y, mo] = m.split('-').map(Number); return new Date(y, mo - 1, 1).toLocaleDateString('de-DE', { month: 'short', year: 'numeric' }); };
+  const longDate = d => { const [y, mo, da] = d.split('-').map(Number); return new Date(y, mo - 1, da).toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' }); };
+  const plain = (icon, title, sub, amt, cls = '') => '<div class="row ' + cls + '">' + icon + '<span class="row-main"><span class="t">' + esc(title) + '</span>' + (sub ? '<span class="s">' + esc(sub) + '</span>' : '') + '</span><span class="row-amt num">' + amt + '</span></div>';
+
+  function renderDebt() {
+    const d = state.debt, me = state.me;
+    $('dStatus').textContent = state.debtError;
+    if (!d) {
+      $('dHero').innerHTML = '<div class="hero-top"><span class="who">' + esc(state.debtError || 'Lade …') + '</span></div>';
+      $('dBreak').innerHTML = $('dRent').innerHTML = $('dList').innerHTML = '';
+      return;
+    }
+    const open = d.open_cents;
+    const who = open > 0 ? (me === 'M' ? 'Du schuldest Jan' : 'Milena schuldet dir') : open < 0 ? (me === 'M' ? 'Jan schuldet dir' : 'Du schuldest Milena') : 'Alles zurückgezahlt';
+    const pct = d.owed_cents ? Math.min(100, d.repaid_cents / d.owed_cents * 100) : 0;
+    $('dHero').innerHTML = '<div class="hero-top"><span class="who">' + who + '</span></div>'
+      + '<div class="amount num">' + fmtNum(Math.abs(open)) + '<span class="c">€</span></div>'
+      + '<div class="progress" role="img" aria-label="' + Math.round(pct) + ' Prozent zurückgezahlt"><i style="width:' + pct.toFixed(1) + '%"></i></div>'
+      + '<div class="kv num"><span>Zurückgezahlt ' + fmt(d.repaid_cents) + '</span><span>von ' + fmt(d.owed_cents) + '</span></div>'
+      + '<button type="button" class="btn prominent press" data-act="repay">Rückzahlung eintragen</button>';
+
+    // Aufschlüsselung
+    const count = {}; let repN = 0;
+    for (const e of d.entries) { if (e.kind === 'repayment') repN++; else count[e.category] = (count[e.category] || 0) + 1; }
+    const posten = n => n + (n === 1 ? ' Posten' : ' Posten');
+    let b = ['miete', 'monat', 'urlaub', 'geliehen', 'sonstiges'].filter(k => d.byCategory[k]).map(k =>
+      plain(sq(k), DCATS[k], k === 'miete' ? 'Hälfte der Mehrkosten' : posten(count[k] || 0), fmt(d.byCategory[k]))).join('');
+    if (d.repaid_cents) b += plain(sq('rueckzahlung'), 'Zurückgezahlt', repN + (repN === 1 ? ' Rückzahlung' : ' Rückzahlungen'), '<span class="minus">−' + fmt(d.repaid_cents) + '</span>');
+    b += plain('<span class="sq" style="background:transparent"></span>', 'Offen', '', fmt(open), 'total');
+    $('dBreak').innerHTML = b;
+
+    // Miete
+    const ph = d.rent.phases;
+    $('dRent').innerHTML = (ph.length ? ph.map(p => {
+      const title = p.running ? 'Seit ' + monthYear(p.start_month) : shortMonth(p.start_month) + ' bis ' + shortMonth(p.last_month);
+      const sub = p.months ? p.months + ' × ' + fmt(p.per_month_cents) + ' (Hälfte von ' + fmt(p.extra_cents) + ')' : 'Ab ' + monthYear(p.start_month) + ': ' + fmt(p.per_month_cents) + ' pro Monat';
+      return plain('', title, sub, fmt(p.total_cents));
+    }).join('') : '<div class="empty">Keine Miete hinterlegt.</div>')
+      + '<button type="button" class="row linkrow" data-act="rent">Mehrkosten ändern</button>';
+
+    // Verlauf
+    $('dList').innerHTML = d.entries.length ? d.entries.map(e => {
+      const rep = e.kind === 'repayment';
+      const sub = longDate(e.date) + ' · ' + (rep ? 'Rückzahlung' : DCATS[e.category] || 'Sonstiges') + (e.settle_month ? ' · aus der Kasse' : '');
+      return '<button type="button" class="row" data-debt-id="' + e.id + '"' + (e.settle_month ? ' disabled' : '') + '>' + sq(rep ? 'rueckzahlung' : e.category)
+        + '<span class="row-main"><span class="t">' + esc(e.label) + '</span><span class="s">' + esc(sub) + '</span></span>'
+        + '<span class="row-amt num">' + (rep ? '<span class="minus">−' + fmt(e.amount_cents) + '</span>' : fmt(e.amount_cents)) + '</span></button>';
+    }).join('') : '<div class="empty">Noch keine Posten.</div>';
+  }
+
+  function openDebt(entry, kind = 'repayment') {
+    state.dsheet = entry
+      ? { id: entry.id, kind: entry.kind, category: entry.kind === 'debt' ? entry.category : 'geliehen', confirmDel: false }
+      : { id: null, kind, category: 'geliehen', confirmDel: false };
+    $('dAmount').value = entry ? fmtNum(entry.amount_cents) : '';
+    $('dLabel').value = entry ? entry.label : '';
+    $('dDate').value = entry ? entry.date : today(); $('dDate').max = today();
+    $('dMsg').hidden = true;
+    renderDSheet();
+    $('scrim').hidden = false; $('dsheet').hidden = false; $('dsheet').scrollTop = 0;
+    sizeAmount($('dAmount'));
+    if (!entry) setTimeout(() => $('dAmount').focus(), 80);
+  }
+  function renderDSheet() {
+    const s = state.dsheet; if (!s) return;
+    const rep = s.kind === 'repayment', edit = !!s.id;
+    $('dTitle').textContent = edit ? 'Posten ändern' : rep ? 'Rückzahlung' : 'Schulden dazu';
+    setSeg($('dKind'), rep ? 0 : 1);
+    $('dRep').setAttribute('aria-pressed', rep); $('dDebt').setAttribute('aria-pressed', !rep);
+    $('dLabel').placeholder = rep ? 'z. B. Überweisung' : 'z. B. Geliehen für Auto';
+    $('dCatField').hidden = rep;
+    $('dCats').innerHTML = Object.entries(DCAT_PICK).map(([k, n]) => '<button type="button" class="press" data-dcat="' + k + '" aria-pressed="' + (s.category === k) + '">' + esc(n) + '</button>').join('');
+    $('dSave').textContent = edit ? 'Speichern' : 'Eintragen';
+    $('dEditBtns').hidden = !edit;
+    $('dDel').textContent = s.confirmDel ? 'Wirklich löschen?' : 'Löschen';
+  }
+  const setDMsg = t => { $('dMsg').textContent = t || ''; $('dMsg').hidden = !t; };
+  $('dRep').onclick = () => { state.dsheet.kind = 'repayment'; renderDSheet(); };
+  $('dDebt').onclick = () => { state.dsheet.kind = 'debt'; renderDSheet(); };
+  $('dsheet').addEventListener('click', ev => {
+    const c = ev.target.closest('[data-dcat]');
+    if (c) { state.dsheet.category = c.dataset.dcat; renderDSheet(); }
+  });
+  $('dsheet').onsubmit = async ev => {
+    ev.preventDefault();
+    const s = state.dsheet; if (!s || saving) return;
+    const amount = parseAmount($('dAmount').value);
+    const rep = s.kind === 'repayment';
+    const label = $('dLabel').value.trim() || (rep ? 'Rückzahlung' : '');
+    const date = $('dDate').value;
+    if (!amount) { setDMsg('Bitte einen Betrag eingeben, zum Beispiel 200.'); $('dAmount').focus(); return; }
+    if (!label) { setDMsg('Wofür? Ein Stichwort reicht.'); $('dLabel').focus(); return; }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { setDMsg('Bitte ein Datum wählen.'); return; }
+    const body = { date, amount_cents: amount, kind: s.kind, category: s.category, label, by: state.me };
+    saving = true; $('dSave').disabled = true; setDMsg('');
+    try {
+      await api(s.id ? '/debt/' + s.id : '/debt', { method: s.id ? 'PUT' : 'POST', body });
+      closeSheet();
+      toast(s.id ? 'Gespeichert' : rep ? fmt(amount) + ' Rückzahlung eingetragen' : fmt(amount) + ' dazugeschrieben');
+      await loadDebt();
+    } catch (e) { if (e instanceof AuthError) { closeSheet(); showLogin(e.message); } else setDMsg(e.message); }
+    finally { saving = false; $('dSave').disabled = false; }
+  };
+  $('dDel').onclick = async () => {
+    const s = state.dsheet; if (!s?.id) return;
+    if (!s.confirmDel) { s.confirmDel = true; renderDSheet(); return; }
+    try { await api('/debt/' + s.id, { method: 'DELETE' }); closeSheet(); toast('Gelöscht'); await loadDebt(); }
+    catch (e) { setDMsg(e.message); }
+  };
+
+  // Miete ändern
+  function rentHalf() {
+    const v = $('rAmount').value.trim();
+    const c = /^0+([.,]0*)?$/.test(v) ? 0 : parseAmount(v);
+    $('rHalf').textContent = isNaN(c) ? '' : c === 0 ? 'Keine Miete mehr ab diesem Monat' : 'Milena übernimmt ' + fmt(c / 2) + ' pro Monat';
+    return c;
+  }
+  function openRent() {
+    const run = state.debt?.rent.phases.find(p => p.running);
+    $('rAmount').value = run ? fmtNum(run.extra_cents) : '';
+    $('rFrom').value = addMonth(curMonth(), 1);
+    $('rMsg').hidden = true;
+    rentHalf();
+    $('scrim').hidden = false; $('rsheet').hidden = false; $('rsheet').scrollTop = 0;
+    sizeAmount($('rAmount'));
+  }
+  $('rAmount').addEventListener('input', rentHalf);
+  $('rsheet').onsubmit = async ev => {
+    ev.preventDefault();
+    const c = rentHalf(), from = $('rFrom').value;
+    const msg = t => { $('rMsg').textContent = t; $('rMsg').hidden = !t; };
+    if (isNaN(c)) return msg('Bitte einen Betrag eingeben, zum Beispiel 465.');
+    if (!isMonth(from)) return msg('Ab welchem Monat?');
+    $('rSave').disabled = true; msg('');
+    try {
+      await api('/rent', { method: 'POST', body: { extra_cents: c, from_month: from } });
+      closeSheet();
+      toast(c ? 'Miete ab ' + monthName(from) + ': ' + fmt(c / 2) + ' für Milena' : 'Miete endet ab ' + monthName(from));
+      await loadDebt();
+    } catch (e) { if (e instanceof AuthError) { closeSheet(); showLogin(e.message); } else msg(e.message); }
+    finally { $('rSave').disabled = false; }
+  };
+
   // ---------- Aktuell halten ----------
   // Alle 30 Sekunden und beim Zurückkehren in die App neu laden, damit ihr beide denselben Stand seht.
-  setInterval(() => { if (document.visibilityState === 'visible' && !state.sheet && !$('app').hidden) load(); }, 30000);
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && !state.sheet && !$('app').hidden) load(); });
+  const refresh = () => { if (document.visibilityState === 'visible' && !anySheet() && !$('dock').hidden) load(); };
+  setInterval(refresh, 30000);
+  document.addEventListener('visibilitychange', refresh);
 
   // Erst nach der Antwort des Servers zeigen: Anmeldung, Personenwahl oder App
   load();
