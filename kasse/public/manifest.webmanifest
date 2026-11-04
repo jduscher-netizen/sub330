@@ -1,0 +1,14 @@
+{
+  "name": "Haushaltskasse",
+  "short_name": "Kasse",
+  "description": "Gemeinsame Ausgaben von Jan und Milena, halbe halbe",
+  "lang": "de",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F3F4EF",
+  "theme_color": "#F3F4EF",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

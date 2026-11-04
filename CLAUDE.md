@@ -211,6 +211,17 @@ Von Jan gemerkt, in dieser Reihenfolge abarbeiten, sobald er sagt "weiter mit de
 - [ ] Schritt 6 Rest: "Tag fällt aus" mit Wochenvorschlag (einzelne Läufe verschieben geht seit 21.10.)
 - [ ] Erinnerung: `GH_ACTIONS_TOKEN` läuft im Oktober 2027 ab (Sync-Protokoll zeigt dann Fehler)
 
+## Nebenprojekt: Haushaltskasse (`kasse/`)
+
+Eigene kleine App für Jan und Milena: gemeinsame Ausgaben pro Monat, Abrechnung 50/50. Hat mit dem Training nichts zu tun und teilt nur das Repo.
+
+- Eigenes Pages-Projekt `haushaltskasse` (https://haushaltskasse.pages.dev, falls der Name frei war), eigene D1-Datenbank `kasse`, Workflow `.github/workflows/kasse.yml` (läuft nur bei Änderungen unter `kasse/`; `deploy.yml` ignoriert diese)
+- Gemeinsames Passwort aus dem GitHub-Secret `KASSE_PASSWORD`, danach Cookie für ein Jahr. Wer gerade bucht (Jan oder Milena), merkt sich das Gerät.
+- Frontend ohne Build: `kasse/public/index.html` (HTML, CSS, JS in einer Datei). API in `kasse/functions/api/`: `GET /api/month/:yyyy-mm`, `POST /api/entries`, `PUT/DELETE /api/entries/:id`, `PUT/DELETE /api/settle/:month`, `DELETE /api/recurring/:id?month=`
+- Buchungen mit Datum, Kategorie (wird aus dem Stichwort geraten), Zahler; Ausgleichszahlungen werden verrechnet; monatliche Wiederholungen (`recurring`) werden beim Abruf bis zum aktuellen Monat angelegt; ausgeglichene Monate sind gesperrt
+- Saldo: (Ausgaben Jan minus Ausgaben Milena) / 2 plus Zahlungen Jan an Milena minus Zahlungen Milena an Jan; positiv heißt Milena schuldet Jan
+- Lokal testen: Ordner `kasse` außerhalb des Repos kopieren (sonst greift `wrangler pages dev` die Konfiguration der Trainings-App), `.dev.vars` mit `KASSE_PASSWORD=...`, `wrangler d1 migrations apply kasse --local`, `wrangler pages dev public`
+
 ## Arbeitsweise
 
 - Sprache in UI und Kommentaren: Deutsch

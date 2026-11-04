@@ -1,0 +1,80 @@
+name: Haushaltskasse
+
+# Eigenes Cloudflare-Pages-Projekt "haushaltskasse" mit eigener D1-Datenbank "kasse".
+# Läuft nur, wenn sich etwas unter kasse/ ändert, oder per Hand.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "kasse/**"
+      - ".github/workflows/kasse.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: kasse
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Abhängigkeiten installieren (Wrangler, TypeScript)
+        run: npm ci
+
+      - name: Typprüfung
+        run: npx tsc -p kasse/functions/tsconfig.json
+
+      # Wrangler soll nur kasse/wrangler.toml sehen, nie die Konfiguration der Trainings-App
+      - name: Kasse in eigenes Verzeichnis kopieren
+        run: |
+          set -euo pipefail
+          cp -r kasse "$RUNNER_TEMP/kasse"
+          echo "WRANGLER=$GITHUB_WORKSPACE/node_modules/.bin/wrangler" >> "$GITHUB_ENV"
+          echo "KASSE_DIR=$RUNNER_TEMP/kasse" >> "$GITHUB_ENV"
+
+      - name: Datenbank D1 anlegen (falls neu) und ID eintragen
+        working-directory: ${{ env.KASSE_DIR }}
+        run: |
+          set -euo pipefail
+          find_id() { "$WRANGLER" d1 list --json | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const db=JSON.parse(s).find(d=>d.name==="kasse");process.stdout.write(db?db.uuid:"")})'; }
+          ID="$(find_id)"
+          if [ -z "$ID" ]; then
+            echo "Lege Datenbank kasse an"
+            "$WRANGLER" d1 create kasse --location weur
+            ID="$(find_id)"
+          fi
+          echo "Datenbank-ID: $ID"
+          sed -i "s/^database_id = .*/database_id = \"$ID\"/" wrangler.toml
+
+      - name: Datenbank-Migrationen anwenden
+        working-directory: ${{ env.KASSE_DIR }}
+        run: '"$WRANGLER" d1 migrations apply kasse --remote'
+
+      - name: Pages-Projekt anlegen (falls neu)
+        working-directory: ${{ env.KASSE_DIR }}
+        run: '"$WRANGLER" pages project create haushaltskasse --production-branch main || echo "Projekt existiert bereits"'
+
+      - name: Passwort an Cloudflare übergeben
+        working-directory: ${{ env.KASSE_DIR }}
+        env:
+          KASSE_PASSWORD: ${{ secrets.KASSE_PASSWORD }}
+        run: |
+          if [ -z "${KASSE_PASSWORD}" ]; then
+            echo "::warning::GitHub-Secret KASSE_PASSWORD fehlt, die Kasse bleibt gesperrt."
+          else
+            printf '%s' "$KASSE_PASSWORD" | "$WRANGLER" pages secret put KASSE_PASSWORD --project-name haushaltskasse
+          fi
+
+      - name: Veröffentlichen
+        working-directory: ${{ env.KASSE_DIR }}
+        run: '"$WRANGLER" pages deploy public --project-name haushaltskasse --branch main --commit-dirty=true'
