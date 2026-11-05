@@ -14,36 +14,40 @@
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/icon-180.png">
 <style>
-/* Aufbau nach iOS 26: Inhalte in ruhigen, gruppierten Listen auf grauem Grund.
+/* Aufbau nach iOS 26: Inhalte in ruhigen, gruppierten Listen auf flachem grauem Grund.
    Glas nur für die Ebene darüber: Leiste unten, Kopf beim Scrollen, Blatt, Menü, Hinweise.
-   Oben ein schwaches Licht in den Farben von Jan und Milena, gewichtet nach ihrem Anteil. */
+   Text mindestens 4,5:1, Abstände 4/8/12/16/24/32, Radien 8/12/16/20/24/32. */
 :root {
   --bg: #F2F2F7;
   --cell: #FFFFFF;
   --label: #000000;
-  --secondary: rgba(60, 60, 67, .60);
+  --secondary: rgba(60, 60, 67, .78);
   --tertiary: rgba(60, 60, 67, .30);
   --sep: rgba(60, 60, 67, .17);
   --fill: rgba(120, 120, 128, .12);
   --fill-strong: rgba(120, 120, 128, .20);
   --press: rgba(0, 0, 0, .05);
   --thumb: #FFFFFF;
-  --tint: #34C759;
-  --tint-text: #248A3D;
+  --tint: #1A7F37;
+  --tint-text: #1C7A35;
   --on-tint: #FFFFFF;
+  --vivid: #34C759;
   --jan: #007AFF;
   --mil: #FF2D55;
+  --jan-text: #0062CC;
+  --mil-text: #D30F45;
   --orange: #FF9500;
-  --red: #FF3B30;
+  --orange-text: #B25000;
+  --red: #D70015;
   --glass: rgba(255, 255, 255, .58);
   --glass-strong: rgba(250, 250, 252, .80);
   --glass-rim: rgba(255, 255, 255, .85);
   --glass-shadow: 0 12px 34px rgba(0, 0, 0, .12), 0 2px 6px rgba(0, 0, 0, .06);
   --sheen: linear-gradient(180deg, rgba(255, 255, 255, .55) 0%, rgba(255, 255, 255, 0) 52%);
-  --glow: .22;
   --text: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", system-ui, sans-serif;
   --rounded: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --ease: cubic-bezier(.32, .72, 0, 1);
+  --m-ease: cubic-bezier(.2, .8, .2, 1);
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
@@ -51,12 +55,12 @@
     --bg: #000000; --cell: #1C1C1E; --label: #FFFFFF;
     --secondary: rgba(235, 235, 245, .60); --tertiary: rgba(235, 235, 245, .30); --sep: rgba(84, 84, 88, .55);
     --fill: rgba(118, 118, 128, .24); --fill-strong: rgba(118, 118, 128, .36); --press: rgba(255, 255, 255, .06); --thumb: #636366;
-    --tint: #30D158; --tint-text: #30D158; --on-tint: #002A0E;
-    --jan: #0A84FF; --mil: #FF375F; --orange: #FF9F0A; --red: #FF453A;
+    --tint: #30D158; --tint-text: #30D158; --on-tint: #002A0E; --vivid: #30D158;
+    --jan: #0A84FF; --mil: #FF375F; --jan-text: #409CFF; --mil-text: #FF6482;
+    --orange: #FF9F0A; --orange-text: #FF9F0A; --red: #FF6961;
     --glass: rgba(44, 44, 48, .52); --glass-strong: rgba(36, 36, 40, .78); --glass-rim: rgba(255, 255, 255, .16);
     --glass-shadow: 0 12px 34px rgba(0, 0, 0, .5), 0 2px 6px rgba(0, 0, 0, .3);
     --sheen: linear-gradient(180deg, rgba(255, 255, 255, .14) 0%, rgba(255, 255, 255, 0) 52%);
-    --glow: .34;
     color-scheme: dark;
   }
 }
@@ -71,14 +75,8 @@ body {
 }
 button, input { font: inherit; color: inherit; letter-spacing: inherit; }
 button { cursor: pointer; border: 0; background: none; padding: 0; }
-:focus-visible { outline: 2px solid var(--jan); outline-offset: 2px; }
+:focus-visible { outline: 2px solid var(--tint); outline-offset: 2px; transition: outline-offset .2s var(--m-ease); }
 .num { font-variant-numeric: tabular-nums; }
-
-/* Licht oben */
-.ambient { position: fixed; inset: 0 0 auto 0; height: 70vh; pointer-events: none; z-index: 0;
-  background:
-    radial-gradient(60% 55% at 12% 0%, color-mix(in srgb, var(--jan) calc(var(--gj, .5) * var(--glow) * 100%), transparent), transparent 70%),
-    radial-gradient(60% 55% at 88% 0%, color-mix(in srgb, var(--mil) calc(var(--gm, .5) * var(--glow) * 100%), transparent), transparent 70%); }
 
 /* Glas */
 .glass {
@@ -87,8 +85,13 @@ button { cursor: pointer; border: 0; background: none; padding: 0; }
   box-shadow: var(--glass-shadow), inset 0 .5px 0 var(--glass-rim), inset 0 0 0 .5px color-mix(in srgb, var(--glass-rim) 50%, transparent);
 }
 .glass.tinted { background: var(--sheen), color-mix(in srgb, var(--tint) 92%, transparent); color: var(--on-tint); }
-.press { transition: transform .35s var(--ease), filter .2s; }
-.press:active { transform: scale(.94); filter: brightness(1.04); }
+.press { transition: transform .2s var(--m-ease), filter .2s var(--m-ease); }
+.press:active { transform: translateY(1px) scale(.985); filter: brightness(.92); transition-duration: 90ms; }
+@media (hover: hover) and (pointer: fine) {
+  .press:hover { transform: translateY(-1px); filter: brightness(.94); transition-duration: 140ms; }
+  .press:active { transform: translateY(1px) scale(.985); filter: brightness(.9); }
+  button.row:hover:not(:disabled), .rbtn:hover, .menu button:hover { background: var(--press); }
+}
 
 /* Kopf */
 .topbar { position: fixed; top: 0; left: 0; right: 0; z-index: 30; height: calc(56px + env(safe-area-inset-top, 0px));
@@ -105,22 +108,22 @@ button { cursor: pointer; border: 0; background: none; padding: 0; }
 .circle { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; }
 #meBtn { grid-column: 3; }
 .mono { width: 30px; height: 30px; border-radius: 50%; display: inline-grid; place-items: center; font-family: var(--rounded); font-weight: 600; font-size: 14px; color: #fff; flex: none; }
-.mono.j { background: linear-gradient(180deg, color-mix(in srgb, var(--jan) 80%, #fff), var(--jan)); }
-.mono.m { background: linear-gradient(180deg, color-mix(in srgb, var(--mil) 80%, #fff), var(--mil)); }
+.mono.j { background: var(--jan); }
+.mono.m { background: var(--mil); }
 .mono.pay { background: var(--fill-strong); color: var(--tint-text); }
 .mono svg { width: 16px; height: 16px; }
 
 /* Menü */
 .menu { position: fixed; z-index: 40; top: calc(env(safe-area-inset-top, 0px) + 54px); right: max(16px, env(safe-area-inset-right, 0px));
-  width: 240px; border-radius: 22px; padding: 6px; background: var(--sheen), var(--glass-strong); transform-origin: top right; }
-.menu button { width: 100%; min-height: 44px; display: flex; align-items: center; gap: 12px; padding: 0 12px; border-radius: 14px; font-size: 17px; text-align: left; }
+  width: 240px; border-radius: 20px; padding: 8px; background: var(--sheen), var(--glass-strong); transform-origin: top right; }
+.menu button { width: 100%; min-height: 44px; display: flex; align-items: center; gap: 12px; padding: 0 12px; border-radius: 12px; font-size: 17px; text-align: left; }
 .menu button:active { background: var(--press); }
 .menu .check { margin-left: auto; color: var(--tint-text); }
 .menu hr { border: 0; height: .5px; background: var(--sep); margin: 4px 12px; }
 .menu .danger { color: var(--red); }
 
 /* Seite */
-.page { position: relative; z-index: 1; max-width: 560px; margin: 0 auto; padding-top: calc(env(safe-area-inset-top, 0px) + 50px); padding-bottom: calc(120px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 22px; }
+.page { position: relative; z-index: 1; max-width: 560px; margin: 0 auto; padding-top: calc(env(safe-area-inset-top, 0px) + 50px); padding-bottom: calc(120px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 24px; }
 .large { padding: 0 4px; }
 .large h1 { margin: 0; font-size: 34px; line-height: 41px; font-weight: 700; letter-spacing: .01em; }
 .large h1 span { color: var(--secondary); font-weight: 600; }
@@ -129,8 +132,8 @@ button { cursor: pointer; border: 0; background: none; padding: 0; }
 .sec-h h2 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: .005em; }
 .sec-h small { color: var(--secondary); font-size: 15px; }
 
-.cell { background: var(--cell); border-radius: 26px; overflow: hidden; }
-.row { width: 100%; min-height: 56px; display: flex; align-items: center; gap: 12px; padding: 10px 16px; text-align: left; position: relative; transition: background .15s; }
+.cell { background: var(--cell); border-radius: 24px; overflow: hidden; }
+.row { width: 100%; min-height: 56px; display: flex; align-items: center; gap: 12px; padding: 8px 16px; text-align: left; position: relative; transition: background .15s; }
 button.row:active:not(:disabled) { background: var(--press); }
 .row:disabled { cursor: default; }
 .list .row + .row::before { content: ""; position: absolute; top: 0; right: 0; left: 58px; height: .5px; background: var(--sep); }
@@ -148,7 +151,7 @@ button.row:active:not(:disabled) { background: var(--press); }
 .banner .go { color: var(--tint-text); font-weight: 500; white-space: nowrap; }
 
 /* Bilanz */
-.hero { padding: 20px 18px 18px; display: flex; flex-direction: column; gap: 14px; }
+.hero { padding: 24px 16px 16px; display: flex; flex-direction: column; gap: 16px; }
 .hero-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 32px; }
 .hero-top .who { color: var(--secondary); font-size: 15px; font-weight: 500; }
 .amount { font-family: var(--rounded); font-weight: 700; font-size: 58px; line-height: 1; letter-spacing: -.02em; margin-top: -4px; }
@@ -163,16 +166,16 @@ button.row:active:not(:disabled) { background: var(--press); }
 .legend div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .legend div:nth-child(2) { text-align: center; } .legend div:last-child { text-align: right; }
 .legend b { font-size: 17px; font-weight: 600; color: var(--label); }
-.legend .lj b { color: var(--jan); } .legend .lm b { color: var(--mil); }
-.note { margin: 0; font-size: 13px; color: var(--secondary); line-height: 1.4; }
+.legend .lj b { color: var(--jan-text); } .legend .lm b { color: var(--mil-text); }
+.note { margin: 0; font-size: 16px; color: var(--secondary); line-height: 1.45; }
 .btn { min-height: 50px; border-radius: 999px; padding: 0 20px; font-size: 17px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
 .btn.prominent { background: var(--tint); color: var(--on-tint); }
 .btn.gray { background: var(--fill); color: var(--tint-text); }
 .btn:disabled { opacity: .45; }
-.btns { display: flex; gap: 10px; } .btns .btn { flex: 1; }
-.seal { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 18px; background: color-mix(in srgb, var(--tint) 14%, transparent); color: var(--tint-text); font-weight: 600; font-size: 15px; }
+.btns { display: flex; gap: 12px; } .btns .btn { flex: 1; }
+.seal { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 16px; background: color-mix(in srgb, var(--tint) 14%, transparent); color: var(--tint-text); font-weight: 600; font-size: 15px; }
 .seal svg { width: 22px; height: 22px; flex: none; }
-.seal button { margin-left: auto; color: var(--tint-text); font-weight: 400; font-size: 15px; min-height: 32px; }
+.seal button { margin-left: auto; color: var(--tint-text); font-weight: 500; font-size: 15px; min-height: 44px; white-space: nowrap; }
 .ask { font-size: 15px; } .ask span { color: var(--secondary); }
 
 /* Kategorien */
@@ -181,7 +184,7 @@ button.row:active:not(:disabled) { background: var(--press); }
 .cat .top small { color: var(--secondary); font-size: 13px; margin-left: 6px; }
 .cat .bar { height: 6px; border-radius: 3px; background: var(--fill); overflow: hidden; }
 .cat .bar i { display: block; height: 100%; border-radius: 3px; background: var(--tertiary); }
-.cat:first-child .bar i { background: var(--tint); }
+.cat:first-child .bar i { background: var(--vivid); }
 
 /* Segmente */
 .seg { position: relative; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; padding: 2px; border-radius: 999px; background: var(--fill); isolation: isolate; }
@@ -191,14 +194,14 @@ button.row:active:not(:disabled) { background: var(--press); }
 .seg button[aria-pressed="true"] { font-weight: 600; }
 .seg.big button { min-height: 40px; font-size: 15px; }
 .seg.payer button { min-height: 44px; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; }
-.seg.payer button .mono { width: 24px; height: 24px; font-size: 12px; }
-.seg.payer button.j[aria-pressed="true"] { color: var(--jan); }
-.seg.payer button.m[aria-pressed="true"] { color: var(--mil); }
+.seg.payer button .mono { width: 24px; height: 24px; font-size: 13px; }
+.seg.payer button.j[aria-pressed="true"] { color: var(--jan-text); }
+.seg.payer button.m[aria-pressed="true"] { color: var(--mil-text); }
 
-.day-h { display: flex; justify-content: space-between; padding: 0 16px 6px; color: var(--secondary); font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: .02em; }
+.day-h { display: flex; justify-content: space-between; padding: 0 16px 8px; color: var(--secondary); font-size: 13px; font-weight: 500; }
 .days { display: flex; flex-direction: column; gap: 18px; }
 .state { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; }
-.state.done { color: var(--tint-text); } .state.open { color: var(--orange); }
+.state.done { color: var(--tint-text); } .state.open { color: var(--orange-text); }
 .state svg { width: 14px; height: 14px; }
 .mrow-r { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
 .foot { text-align: center; color: var(--secondary); font-size: 13px; padding-top: 4px; }
@@ -216,9 +219,9 @@ button.row:active:not(:disabled) { background: var(--press); }
 /* Blatt */
 .scrim { position: fixed; inset: 0; z-index: 50; background: rgba(0, 0, 0, .28); }
 .sheet { position: fixed; z-index: 51; left: max(8px, env(safe-area-inset-left, 0px)); right: max(8px, env(safe-area-inset-right, 0px)); bottom: max(8px, env(safe-area-inset-bottom, 0px));
-  max-width: 560px; margin: 0 auto; border-radius: 34px; padding: 8px 16px 18px;
+  max-width: 560px; margin: 0 auto; border-radius: 32px; padding: 8px 16px 16px;
   max-height: calc(100% - 16px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); overflow-y: auto; overscroll-behavior: contain;
-  display: flex; flex-direction: column; gap: 14px; background: var(--sheen), var(--glass-strong); }
+  display: flex; flex-direction: column; gap: 16px; background: var(--sheen), var(--glass-strong); }
 .sheet > * { flex-shrink: 0; }
 .grabber { width: 36px; height: 5px; border-radius: 3px; background: var(--tertiary); margin: 0 auto 2px; flex: none; }
 .sheet-h { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; }
@@ -231,7 +234,7 @@ button.row:active:not(:disabled) { background: var(--press); }
 .amountwrap input::placeholder { color: var(--tertiary); }
 .amountwrap .c { font-family: var(--rounded); font-weight: 600; font-size: 34px; color: var(--secondary); }
 .measure { position: absolute; visibility: hidden; white-space: pre; font-family: var(--rounded); font-weight: 700; font-size: 56px; letter-spacing: -.02em; }
-.group { background: color-mix(in srgb, var(--cell) 88%, transparent); border-radius: 22px; overflow: hidden; }
+.group { background: color-mix(in srgb, var(--cell) 88%, transparent); border-radius: 20px; overflow: hidden; }
 .frow { min-height: 50px; display: flex; align-items: center; gap: 12px; padding: 6px 16px; position: relative; }
 .frow + .frow::before { content: ""; position: absolute; top: 0; left: 16px; right: 0; height: .5px; background: var(--sep); }
 .frow > span:first-child { flex: none; }
@@ -252,7 +255,7 @@ button.row:active:not(:disabled) { background: var(--press); }
 .switch { -webkit-appearance: none; appearance: none; margin: 0 0 0 auto; width: 51px; height: 31px; border-radius: 16px; background: var(--fill-strong); position: relative; flex: none; cursor: pointer; transition: background .25s; }
 .switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 14px; background: #fff; box-shadow: 0 3px 8px rgba(0, 0, 0, .15), 0 1px 1px rgba(0, 0, 0, .16); transition: transform .35s var(--ease), width .2s; }
 .switch:active::after { width: 33px; }
-.switch:checked { background: var(--tint); }
+.switch:checked { background: var(--vivid); }
 .switch:checked::after { transform: translateX(20px); }
 .switch:checked:active::after { transform: translateX(14px); }
 .rbtn { width: 100%; min-height: 50px; font-size: 17px; position: relative; }
@@ -276,7 +279,7 @@ button.row:active:not(:disabled) { background: var(--press); }
 .gate .group { background: var(--cell); }
 .gate .frow input { text-align: left; }
 .gate .msg { text-align: left; padding: 0 4px; }
-.whobtn { min-height: 76px; border-radius: 26px; display: flex; align-items: center; gap: 16px; padding: 0 20px; font-size: 20px; font-weight: 600; text-align: left; }
+.whobtn { min-height: 76px; border-radius: 24px; display: flex; align-items: center; gap: 16px; padding: 0 20px; font-size: 20px; font-weight: 600; text-align: left; }
 .whobtn .mono { width: 44px; height: 44px; font-size: 19px; }
 .whobtn .chev { margin-left: auto; }
 
@@ -289,7 +292,7 @@ button.row:active:not(:disabled) { background: var(--press); }
 
 /* Tab-Leiste */
 .tabbar { display: flex; align-items: center; height: 62px; border-radius: 999px; padding: 4px; gap: 2px; }
-.tab { min-width: 104px; height: 54px; border-radius: 999px; padding: 0 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 11px; font-weight: 600; transition: background .3s, color .3s; }
+.tab { min-width: 104px; height: 54px; border-radius: 999px; padding: 0 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 13px; font-weight: 600; transition: background .24s var(--m-ease), color .24s var(--m-ease); }
 .tab svg { width: 24px; height: 24px; }
 .tab[aria-current="page"] { color: var(--tint-text); background: var(--fill); }
 .fab { width: 62px; height: 62px; border-radius: 50%; display: grid; place-items: center; }
@@ -297,22 +300,22 @@ button.row:active:not(:disabled) { background: var(--press); }
 
 /* Rückzahlung */
 .progress { height: 8px; border-radius: 4px; background: var(--fill); overflow: hidden; }
-.progress i { display: block; height: 100%; border-radius: 4px; background: var(--tint); min-width: 8px; }
+.progress i { display: block; height: 100%; border-radius: 4px; background: var(--vivid); min-width: 8px; }
 .kv { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--secondary); margin-top: -6px; }
 .sq { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; color: #fff; flex: none; font-family: var(--rounded); font-weight: 700; font-size: 16px; }
 .sq svg { width: 18px; height: 18px; }
-.sq.miete { background: #5856D6; } .sq.monat { background: var(--orange); } .sq.urlaub { background: #30B0C7; }
-.sq.geliehen { background: #AF52DE; } .sq.sonstiges { background: #8E8E93; } .sq.rueckzahlung { background: var(--tint); }
+.sq.miete { background: #A2845E; } .sq.monat { background: var(--orange); } .sq.urlaub { background: #30B0C7; }
+.sq.geliehen { background: #FFCC00; color: #3D3000; } .sq.sonstiges { background: #8E8E93; } .sq.rueckzahlung { background: var(--tint); }
 .list.icons .row + .row::before { left: 58px; }
 .minus { color: var(--tint-text); }
 .row.total { font-weight: 600; }
 .row.total .row-amt { font-weight: 700; }
 .linkrow { justify-content: center; color: var(--tint-text); min-height: 50px; }
-.foot-note { color: var(--secondary); font-size: 13px; padding: 8px 16px 0; line-height: 1.4; }
-.sheet .lead { margin: 0; text-align: center; color: var(--secondary); font-size: 15px; line-height: 1.4; padding: 0 8px; }
+.foot-note { color: var(--secondary); font-size: 16px; padding: 12px 16px 0; line-height: 1.45; }
+.sheet .lead { margin: 0; text-align: center; color: var(--secondary); font-size: 16px; line-height: 1.45; padding: 0 8px; }
 .frow input[type=month] { margin-left: auto; border: 0; border-radius: 8px; background: var(--fill); padding: 6px 10px; min-height: 34px; font-size: 17px; color: var(--label); }
-.choice { display: flex; flex-direction: column; gap: 10px; }
-.choice .linkbtn { color: var(--secondary); font-size: 15px; min-height: 40px; }
+.choice { display: flex; flex-direction: column; gap: 12px; }
+.choice .linkbtn { color: var(--tint-text); font-size: 17px; min-height: 44px; }
 
 @media (prefers-reduced-motion: no-preference) {
   .sheet:not([hidden]) { animation: sheetIn .5s var(--ease); }
@@ -329,7 +332,6 @@ button.row:active:not(:disabled) { background: var(--press); }
 </style>
 </head>
 <body>
-<div class="ambient" id="ambient"></div>
 
 <!-- Anmeldung -->
 <form class="gate" id="login" hidden autocomplete="on">
@@ -350,8 +352,8 @@ button.row:active:not(:disabled) { background: var(--press); }
 <!-- Wer bin ich -->
 <div class="gate" id="who" hidden>
   <div>
-    <h1>Wer bist du?</h1>
-    <p>Das iPhone merkt es sich. Neue Ausgaben stehen dann automatisch auf deinem Namen.</p>
+    <h1>Person auswählen</h1>
+    <p>Das iPhone merkt sich die Wahl. Neue Ausgaben stehen dann automatisch auf deinem Namen.</p>
   </div>
   <button class="whobtn glass press" type="button" data-me="J"><span class="mono j">J</span>Jan<svg class="chev" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 1.5L6.5 7l-5 5.5"/></svg></button>
   <button class="whobtn glass press" type="button" data-me="M"><span class="mono m">M</span>Milena<svg class="chev" viewBox="0 0 8 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 1.5L6.5 7l-5 5.5"/></svg></button>
@@ -385,7 +387,7 @@ button.row:active:not(:disabled) { background: var(--press); }
   <div class="cell hero" id="bilanz"></div>
 
   <section id="catSec" hidden>
-    <div class="sec-h"><h2>Wofür</h2><small id="catTotal" class="num"></small></div>
+    <div class="sec-h"><h2>Ausgaben nach Kategorie</h2><small id="catTotal" class="num"></small></div>
     <div class="cell" id="cats"></div>
   </section>
 
@@ -466,9 +468,9 @@ button.row:active:not(:disabled) { background: var(--press); }
     <label class="frow"><span>Datum</span><input type="date" id="dDate"></label>
   </div>
   <div class="msg" id="dMsg" hidden></div>
-  <button class="btn prominent press" type="submit" id="dSave">Eintragen</button>
+  <button class="btn prominent press" type="submit" id="dSave">Rückzahlung eintragen</button>
   <div class="group" id="dEditBtns" hidden>
-    <button class="rbtn danger" type="button" id="dDel">Löschen</button>
+    <button class="rbtn danger" type="button" id="dDel">Posten löschen</button>
   </div>
 </form>
 
@@ -487,7 +489,7 @@ button.row:active:not(:disabled) { background: var(--press); }
   </div>
   <p class="lead">0 € beendet die Miete ab diesem Monat. Frühere Monate bleiben, wie sie sind.</p>
   <div class="msg" id="rMsg" hidden></div>
-  <button class="btn prominent press" type="submit" id="rSave">Speichern</button>
+  <button class="btn prominent press" type="submit" id="rSave">Mehrkosten speichern</button>
 </form>
 
 <!-- Blatt zum Eintragen und Ändern -->
@@ -526,10 +528,10 @@ button.row:active:not(:disabled) { background: var(--press); }
     <label class="frow" id="sRuleWrap" hidden><span class="grow">Auch künftige Monate<small>Monatliche Ausgabe mit ändern</small></span><input type="checkbox" class="switch" id="sRule" checked></label>
   </div>
   <div class="msg" id="sMsg" hidden></div>
-  <button class="btn prominent press" type="submit" id="sSave">Eintragen</button>
+  <button class="btn prominent press" type="submit" id="sSave">Ausgabe eintragen</button>
   <div class="group" id="sEditBtns" hidden>
-    <button class="rbtn tintx" type="button" id="sStop" hidden>Nicht mehr wiederholen</button>
-    <button class="rbtn danger" type="button" id="sDel">Löschen</button>
+    <button class="rbtn tintx" type="button" id="sStop" hidden>Wiederholung beenden</button>
+    <button class="rbtn danger" type="button" id="sDel">Buchung löschen</button>
   </div>
 </form>
 
@@ -703,28 +705,23 @@ button.row:active:not(:disabled) { background: var(--press); }
     const n = entries.filter(e => e.kind === 'expense').length;
     $('subtitle').textContent = n ? n + (n === 1 ? ' Ausgabe' : ' Ausgaben') + ' · ' + fmt(r.total) : 'Noch keine Ausgaben';
 
-    // Licht oben nach Anteil
-    const shareJ = r.total ? r.J / r.total : .5;
-    $('ambient').style.setProperty('--gj', (.25 + shareJ * .75).toFixed(2));
-    $('ambient').style.setProperty('--gm', (.25 + (1 - shareJ) * .75).toFixed(2));
-
     // Hinweis auf offenen früheren Monat
     const settledSet = new Set(d.settlements.map(s => s.month));
     const open = d.months.filter(x => x.month < m && !settledSet.has(x.month) && x.n > 0).sort((a, b) => b.month.localeCompare(a.month))[0];
     if (open) {
       $('banner').hidden = false; $('banner').dataset.goto = open.month;
-      $('banner').innerHTML = '<span class="ic">' + ICON.clock + '</span><span class="row-main"><span class="t">' + esc(monthName(open.month)) + ' ist noch offen</span><span class="s">' + esc(debtShort(balOf(open), me)) + '</span></span><span class="go">Ansehen</span>';
+      $('banner').innerHTML = '<span class="ic">' + ICON.clock + '</span><span class="row-main"><span class="t">' + esc(monthName(open.month)) + ' ist noch offen</span><span class="s">' + esc(debtShort(balOf(open), me)) + '</span></span><span class="go">' + esc(monthName(open.month)) + ' ansehen</span>';
     } else $('banner').hidden = true;
 
     // Bilanz
     let h = '';
     if (!entries.length) {
       h += '<div class="hero-top"><span class="who">Noch nichts eingetragen</span></div><div class="amount num">0,00<span class="c">€</span></div>'
-        + '<p class="note">Tippt unten auf Ausgabe und tragt ein, was ihr für den gemeinsamen Haushalt bezahlt. Die Kasse rechnet halbe halbe.</p>';
+        + '<p class="note">Tippt unten auf das Plus und tragt ein, was ihr für den gemeinsamen Haushalt bezahlt. Die Kasse rechnet halbe halbe.</p>';
     } else {
       const amount = Math.abs(r.bal);
       h += '<div class="hero-top"><span class="who">' + esc(debtLine(r.bal, me, !!settled)) + '</span>'
-        + (amount && !settled ? '<button type="button" class="pill press" data-act="copy" data-v="' + fmtNum(amount) + '">' + ICON.copy + 'Kopieren</button>' : '') + '</div>'
+        + (amount && !settled ? '<button type="button" class="pill press" data-act="copy" data-v="' + fmtNum(amount) + '">' + ICON.copy + 'Betrag kopieren</button>' : '') + '</div>'
         + '<div class="amount num">' + fmtNum(amount) + '<span class="c">€</span></div>';
       const pj = r.total ? r.J / r.total * 100 : 50;
       h += '<div class="split" role="img" aria-label="Jan ' + Math.round(pj) + ' Prozent, Milena ' + (100 - Math.round(pj)) + ' Prozent der Ausgaben">'
@@ -737,12 +734,12 @@ button.row:active:not(:disabled) { background: var(--press); }
       if (parts.length) h += '<p class="note num">' + esc(parts.join('. ')) + '.</p>';
       if (settled) {
         const when = new Date(settled.settled_at.replace(' ', 'T') + 'Z').toLocaleDateString('de-DE', { day: 'numeric', month: 'long' });
-        h += '<div class="seal">' + ICON.checkCircle + '<span>' + (settled.to_debt ? 'Auf Rückzahlung gebucht am ' : 'Ausgeglichen am ') + esc(when) + '</span><button type="button" data-act="reopen">Öffnen</button></div>';
+        h += '<div class="seal">' + ICON.checkCircle + '<span>' + (settled.to_debt ? 'Auf Rückzahlung gebucht am ' : 'Ausgeglichen am ') + esc(when) + '</span><button type="button" data-act="reopen">Wieder öffnen</button></div>';
       } else if (state.confirmSettle) {
         const debtor = r.bal > 0 ? 'M' : 'J';
         if (r.bal) {
           h += '<div class="ask">Wie wird ' + esc(monthName(m)) + ' ausgeglichen? <span>' + esc(NAMES[debtor] + ' zahlt ' + NAMES[OTHER[debtor]] + ' ' + fmt(amount) + '.') + '</span></div>'
-            + '<div class="choice"><button type="button" class="btn prominent press" data-act="settle-yes">Überwiesen</button>'
+            + '<div class="choice"><button type="button" class="btn prominent press" data-act="settle-yes">Als überwiesen abschließen</button>'
             + '<button type="button" class="btn gray press" data-act="settle-yes" data-debt="1">Auf Rückzahlung buchen</button>'
             + '<button type="button" class="linkbtn" data-act="settle-no">Abbrechen</button></div>';
         } else {
@@ -974,11 +971,11 @@ button.row:active:not(:disabled) { background: var(--press); }
     $('sSuggest').hidden = !sug.length;
     $('sRecWrap').hidden = pay || edit;
     $('sRuleWrap').hidden = !(edit && s.recurring);
-    $('sSave').textContent = edit ? 'Speichern' : pay ? 'Zahlung eintragen' : 'Eintragen';
+    $('sSave').textContent = edit ? 'Änderung speichern' : pay ? 'Zahlung eintragen' : 'Ausgabe eintragen';
     $('sEditBtns').hidden = !edit;
-    $('sDel').textContent = s.confirmDel ? 'Wirklich löschen?' : 'Löschen';
+    $('sDel').textContent = s.confirmDel ? 'Endgültig löschen' : 'Buchung löschen';
     $('sStop').hidden = !(edit && s.recurring && !s.recurringEnd);
-    $('sStop').textContent = s.confirmStop ? 'Ab ' + monthName(addMonth(s.month, 1)) + ' beenden?' : 'Nicht mehr wiederholen';
+    $('sStop').textContent = s.confirmStop ? 'Ab ' + monthName(addMonth(s.month, 1)) + ' beenden' : 'Wiederholung beenden';
   }
   const setMsg = t => { $('sMsg').textContent = t || ''; $('sMsg').hidden = !t; };
 
@@ -1125,9 +1122,9 @@ button.row:active:not(:disabled) { background: var(--press); }
     $('dLabel').placeholder = rep ? 'z. B. Überweisung' : 'z. B. Geliehen für Auto';
     $('dCatField').hidden = rep;
     $('dCats').innerHTML = Object.entries(DCAT_PICK).map(([k, n]) => '<button type="button" class="press" data-dcat="' + k + '" aria-pressed="' + (s.category === k) + '">' + esc(n) + '</button>').join('');
-    $('dSave').textContent = edit ? 'Speichern' : 'Eintragen';
+    $('dSave').textContent = edit ? 'Änderung speichern' : rep ? 'Rückzahlung eintragen' : 'Schulden eintragen';
     $('dEditBtns').hidden = !edit;
-    $('dDel').textContent = s.confirmDel ? 'Wirklich löschen?' : 'Löschen';
+    $('dDel').textContent = s.confirmDel ? 'Endgültig löschen' : 'Posten löschen';
   }
   const setDMsg = t => { $('dMsg').textContent = t || ''; $('dMsg').hidden = !t; };
   $('dRep').onclick = () => { state.dsheet.kind = 'repayment'; renderDSheet(); };
